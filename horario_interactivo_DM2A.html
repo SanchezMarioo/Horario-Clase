@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Horario DM2A · Desarrollo de Aplicaciones Multiplataforma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(15, 23, 42, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --glow: rgba(99, 102, 241, 0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px 60px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glows */
+    .bg-blob-1 {
+      position: fixed;
+      top: -120px;
+      left: 10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, rgba(0,0,0,0) 70%);
+      z-index: -1;
+      pointer-events: none;
+      filter: blur(40px);
+    }
+    .bg-blob-2 {
+      position: fixed;
+      bottom: -150px;
+      right: 10%;
+      width: 550px;
+      height: 550px;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(0,0,0,0) 70%);
+      z-index: -1;
+      pointer-events: none;
+      filter: blur(50px);
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      max-width: 900px;
+      margin-bottom: 28px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      background-color: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    /* Controls / Filter Bar */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      max-width: 1100px;
+    }
+
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .filter-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .filter-btn.active {
+      background: #6366f1;
+      border-color: #818cf8;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Schedule Glass Container */
+    .schedule-container {
+      width: 100%;
+      max-width: 1240px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 8px;
+      min-width: 820px;
+    }
+
+    th {
+      padding: 14px 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    th.th-time {
+      width: 130px;
+      color: #64748b;
+    }
+
+    td {
+      padding: 0;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .time-slot {
+      padding: 12px 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: -0.2px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .time-slot span {
+      font-size: 0.7rem;
+      color: #475569;
+      font-weight: 500;
+    }
+
+    /* Subject Cards */
+    .subject {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 14px 10px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1.35;
+      min-height: 64px;
+      border: 1px solid transparent;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .subject::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: currentColor;
+      opacity: 0.6;
+    }
+
+    .subject:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      z-index: 10;
+    }
+
+    .subject.dimmed {
+      opacity: 0.2;
+      filter: grayscale(80%);
+      transform: scale(0.97);
+    }
+
+    .subject.highlighted {
+      transform: scale(1.04);
+      box-shadow: 0 0 25px currentColor;
+      z-index: 20;
+    }
+
+    /* Subject Color Palette (Modern Neon / Pastel Dark Glow) */
+    .sub-nube {
+      background: rgba(14, 165, 233, 0.12);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+    .sub-nube:hover { background: rgba(14, 165, 233, 0.22); }
+
+    .sub-interfaces {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+      border-color: rgba(251, 191, 36, 0.25);
+    }
+    .sub-interfaces:hover { background: rgba(245, 158, 11, 0.22); }
+
+    .sub-datos {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border-color: rgba(52, 211, 153, 0.25);
+    }
+    .sub-datos:hover { background: rgba(16, 185, 129, 0.22); }
+
+    .sub-multimedia {
+      background: rgba(168, 85, 247, 0.12);
+      color: #c084fc;
+      border-color: rgba(192, 132, 252, 0.25);
+    }
+    .sub-multimedia:hover { background: rgba(168, 85, 247, 0.22); }
+
+    .sub-gestion {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.25);
+    }
+    .sub-gestion:hover { background: rgba(239, 68, 68, 0.22); }
+
+    .sub-servicios {
+      background: rgba(249, 115, 22, 0.12);
+      color: #fb923c;
+      border-color: rgba(251, 146, 60, 0.25);
+    }
+    .sub-servicios:hover { background: rgba(249, 115, 22, 0.22); }
+
+    .sub-digitalizacion {
+      background: rgba(99, 102, 241, 0.12);
+      color: #818cf8;
+      border-color: rgba(129, 140, 248, 0.25);
+    }
+    .sub-digitalizacion:hover { background: rgba(99, 102, 241, 0.22); }
+
+    .sub-ipe {
+      background: rgba(20, 184, 166, 0.12);
+      color: #2dd4bf;
+      border-color: rgba(45, 212, 191, 0.25);
+    }
+    .sub-ipe:hover { background: rgba(20, 184, 166, 0.22); }
+
+    .sub-sostenibilidad {
+      background: rgba(148, 163, 184, 0.12);
+      color: #cbd5e1;
+      border-color: rgba(203, 213, 225, 0.25);
+    }
+    .sub-sostenibilidad:hover { background: rgba(148, 163, 184, 0.22); }
+
+    /* Break / Recreo */
+    .recreo-cell {
+      padding: 10px;
+      border-radius: 12px;
+      background: repeating-linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.02),
+        rgba(255, 255, 255, 0.02) 10px,
+        rgba(255, 255, 255, 0.04) 10px,
+        rgba(255, 255, 255, 0.04) 20px
+      );
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      color: #64748b;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* Footer stats bar */
+    .footer-stats {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .stat-pill {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stat-pill strong {
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-blob-1"></div>
+  <div class="bg-blob-2"></div>
+
+  <header class="header">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Curso Académico 2025 – 2026
+    </div>
+    <h1>Horario DM2A</h1>
+    <p class="subtitle">Desarrollo de Aplicaciones Multiplataforma · 2º Curso</p>
+  </header>
+
+  <!-- Subject Filter Pills -->
+  <nav class="controls" id="filterNav">
+    <button class="filter-btn active" data-filter="all">Todas las asignaturas</button>
+    <button class="filter-btn" data-filter="sub-nube">☁️ Computación en la nube</button>
+    <button class="filter-btn" data-filter="sub-interfaces">💻 Interfaces</button>
+    <button class="filter-btn" data-filter="sub-datos">🗄️ Acceso a datos</button>
+    <button class="filter-btn" data-filter="sub-multimedia">📱 Móviles</button>
+    <button class="filter-btn" data-filter="sub-gestion">📊 SGE</button>
+    <button class="filter-btn" data-filter="sub-servicios">⚡ Servicios y Procesos</button>
+    <button class="filter-btn" data-filter="sub-ipe">💼 Empleabilidad</button>
+  </nav>
+
+  <main class="schedule-container">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-time">Horario</th>
+            <th>Lunes</th>
+            <th>Martes</th>
+            <th>Miércoles</th>
+            <th>Jueves</th>
+            <th>Viernes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Fila 1: 08:30 - 09:20 -->
+          <tr>
+            <td><div class="time-slot">08:30 – 09:20 <span>1ª Hora</span></div></td>
+            <td><div class="subject sub-nube" data-cat="sub-nube">Computación en la nube</div></td>
+            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
+            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
+            <td><div class="subject sub-digitalizacion" data-cat="sub-digitalizacion">Dig. apl. sec. productivos</div></td>
+            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
+          </tr>
+
+          <!-- Fila 2: 09:20 - 10:10 -->
+          <tr>
+            <td><div class="time-slot">09:20 – 10:10 <span>2ª Hora</span></div></td>
+            <td><div class="subject sub-nube" data-cat="sub-nube">Computación en la nube</div></td>
+            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
+            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
+            <td><div class="subject sub-ipe" data-cat="sub-ipe">Itin. pers. para empleab. II</div></td>
+            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
+          </tr>
+
+          <!-- RECREO 1: 10:10 - 10:35 -->
+          <tr>
+            <td><div class="time-slot">10:10 – 10:35 <span>Pausa</span></div></td>
+            <td colspan="5"><div class="recreo-cell">☕ R E C R E O</div></td>
+          </tr>
+
+          <!-- Fila 3: 10:35 - 11:25 -->
+          <tr>
+            <td><div class="time-slot">10:35 – 11:25 <span>3ª Hora</span></div></td>
+            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
+            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
+            <td><div class="subject sub-servicios" data-cat="sub-servicios">Program. Servicios y Procesos</div></td>
+            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
+            <td><div class="subject sub-nube" data-cat="sub-nube">Computación en la nube</div></td>
+          </tr>
+
+          <!-- Fila 4: 11:25 - 12:15 -->
+          <tr>
+            <td><div class="time-slot">11:25 – 12:15 <span>4ª Hora</span></div></td>
+            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
+            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
+            <td><div class="subject sub-servicios" data-cat="sub-servicios">Program. Servicios y Procesos</div></td>
+            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
+            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
+          </tr>
+
+          <!-- RECREO 2: 12:15 - 12:40 -->
+          <tr>
+            <td><div class="time-slot">12:15 – 12:40 <span>Pausa</span></div></td>
+            <td colspan="5"><div class="recreo-cell">🥪 R E C R E O</div></td>
+          </tr>
+
+          <!-- Fila 5: 12:40 - 13:30 -->
+          <tr>
+            <td><div class="time-slot">12:40 – 13:30 <span>5ª Hora</span></div></td>
+            <td><div class="subject sub-ipe" data-cat="sub-ipe">Itin. pers. para empleab. II</div></td>
+            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
+            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
+            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
+            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
+          </tr>
+
+          <!-- Fila 6: 13:30 - 14:20 -->
+          <tr>
+            <td><div class="time-slot">13:30 – 14:20 <span>6ª Hora</span></div></td>
+            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
+            <td><div class="subject sub-sostenibilidad" data-cat="sub-sostenibilidad">Sostenib. apl. al sis. prod.</div></td>
+            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
+            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
+            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer class="footer-stats">
+    <div class="stat-pill">⚡ Total lectivas: <strong>30h / semana</strong></div>
+    <div class="stat-pill">📍 Aula: <strong>C03</strong></div>
+    <div class="stat-pill">✨ Modo interactivo: Haz clic en una asignatura para resaltarla</div>
+  </footer>
+
+  <script>
+    // Filtro interactivo de asignaturas
+    const buttons = document.querySelectorAll('.filter-btn');
+    const subjects = document.querySelectorAll('.subject');
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.dataset.filter;
+
+        subjects.forEach(sub => {
+          if (filter === 'all') {
+            sub.classList.remove('dimmed', 'highlighted');
+          } else if (sub.dataset.cat === filter) {
+            sub.classList.remove('dimmed');
+            sub.classList.add('highlighted');
+          } else {
+            sub.classList.remove('highlighted');
+            sub.classList.add('dimmed');
+          }
+        });
+      });
+    });
+
+    // Clic directo en tarjetas para resaltar todas las iguales
+    subjects.forEach(card => {
+      card.addEventListener('click', () => {
+        const cat = card.dataset.cat;
+        const matchingBtn = document.querySelector(`.filter-btn[data-filter="${cat}"]`);
+        if (matchingBtn) {
+          matchingBtn.click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
