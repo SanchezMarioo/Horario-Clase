@@ -10,12 +10,11 @@
   <style>
     :root {
       --bg: #090d16;
-      --card-bg: rgba(15, 23, 42, 0.7);
+      --card-bg: rgba(15, 23, 42, 0.75);
       --border: rgba(255, 255, 255, 0.08);
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --accent: #6366f1;
-      --glow: rgba(99, 102, 241, 0.15);
     }
 
     * {
@@ -37,7 +36,6 @@
       overflow-x: hidden;
     }
 
-    /* Ambient background glows */
     .bg-blob-1 {
       position: fixed;
       top: -120px;
@@ -61,11 +59,10 @@
       filter: blur(50px);
     }
 
-    /* Header */
     .header {
       text-align: center;
       max-width: 900px;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
     .badge {
@@ -80,7 +77,7 @@
       font-size: 0.8rem;
       font-weight: 600;
       letter-spacing: 0.5px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       text-transform: uppercase;
       box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
     }
@@ -99,13 +96,96 @@
       background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #94a3b8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .subtitle {
       color: var(--text-muted);
-      font-size: 1rem;
-      font-weight: 400;
+      font-size: 0.95rem;
+    }
+
+    /* Summary cards section for attendance limit */
+    .summary-section {
+      width: 100%;
+      max-width: 1240px;
+      margin-bottom: 24px;
+    }
+
+    .summary-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+    }
+
+    .sum-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .sum-card:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .sum-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .sum-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1.3;
+    }
+
+    .sum-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .sum-details {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 6px;
+    }
+
+    .sum-limit {
+      color: #f87171;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
     /* Controls / Filter Bar */
@@ -113,28 +193,27 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 10px;
-      margin-bottom: 24px;
-      max-width: 1100px;
+      gap: 8px;
+      margin-bottom: 20px;
+      max-width: 1240px;
     }
 
     .filter-btn {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border);
       color: var(--text-muted);
-      padding: 8px 16px;
-      border-radius: 12px;
-      font-size: 0.82rem;
+      padding: 7px 14px;
+      border-radius: 10px;
+      font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.25s ease;
+      transition: all 0.2s ease;
       backdrop-filter: blur(8px);
     }
 
     .filter-btn:hover {
       background: rgba(255, 255, 255, 0.08);
       color: #fff;
-      transform: translateY(-1px);
     }
 
     .filter-btn.active {
@@ -144,13 +223,13 @@
       box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
     }
 
-    /* Schedule Glass Container */
+    /* Schedule Container */
     .schedule-container {
       width: 100%;
       max-width: 1240px;
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 24px;
+      border-radius: 20px;
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -167,24 +246,24 @@
       width: 100%;
       border-collapse: separate;
       border-spacing: 8px;
-      min-width: 820px;
+      min-width: 860px;
     }
 
     th {
-      padding: 14px 12px;
-      font-size: 0.88rem;
+      padding: 12px 10px;
+      font-size: 0.85rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: #94a3b8;
       text-align: center;
       background: rgba(255, 255, 255, 0.02);
-      border-radius: 12px;
+      border-radius: 10px;
       border: 1px solid rgba(255, 255, 255, 0.04);
     }
 
     th.th-time {
-      width: 130px;
+      width: 125px;
       color: #64748b;
     }
 
@@ -195,11 +274,10 @@
     }
 
     .time-slot {
-      padding: 12px 10px;
-      font-size: 0.82rem;
+      padding: 12px 8px;
+      font-size: 0.8rem;
       font-weight: 700;
       color: #64748b;
-      letter-spacing: -0.2px;
       background: rgba(255, 255, 255, 0.02);
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.04);
@@ -209,28 +287,25 @@
       gap: 2px;
     }
     .time-slot span {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: #475569;
       font-weight: 500;
     }
 
-    /* Subject Cards */
+    /* Subject Cards in Table */
     .subject {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 14px 10px;
-      border-radius: 14px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      line-height: 1.35;
-      min-height: 64px;
+      padding: 10px 8px;
+      border-radius: 12px;
+      min-height: 66px;
       border: 1px solid transparent;
       transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
       position: relative;
-      overflow: hidden;
+      gap: 4px;
     }
 
     .subject::after {
@@ -244,9 +319,30 @@
       opacity: 0.6;
     }
 
+    .sub-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    /* Pill with the 12% limit inside card */
+    .sub-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      letter-spacing: -0.2px;
+      white-space: nowrap;
+    }
+
     .subject:hover {
       transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.6);
       z-index: 10;
     }
 
@@ -262,71 +358,17 @@
       z-index: 20;
     }
 
-    /* Subject Color Palette (Modern Neon / Pastel Dark Glow) */
-    .sub-nube {
-      background: rgba(14, 165, 233, 0.12);
-      color: #38bdf8;
-      border-color: rgba(56, 189, 248, 0.25);
-    }
-    .sub-nube:hover { background: rgba(14, 165, 233, 0.22); }
+    /* Color Palette */
+    .sub-nube { background: rgba(14, 165, 233, 0.14); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25); }
+    .sub-interfaces { background: rgba(245, 158, 11, 0.14); color: #fbbf24; border-color: rgba(251, 191, 36, 0.25); }
+    .sub-datos { background: rgba(16, 185, 129, 0.14); color: #34d399; border-color: rgba(52, 211, 153, 0.25); }
+    .sub-multimedia { background: rgba(168, 85, 247, 0.14); color: #c084fc; border-color: rgba(192, 132, 252, 0.25); }
+    .sub-gestion { background: rgba(239, 68, 68, 0.14); color: #f87171; border-color: rgba(248, 113, 113, 0.25); }
+    .sub-servicios { background: rgba(249, 115, 22, 0.14); color: #fb923c; border-color: rgba(251, 146, 60, 0.25); }
+    .sub-digitalizacion { background: rgba(99, 102, 241, 0.14); color: #818cf8; border-color: rgba(129, 140, 248, 0.25); }
+    .sub-ipe { background: rgba(20, 184, 166, 0.14); color: #2dd4bf; border-color: rgba(45, 212, 191, 0.25); }
+    .sub-sostenibilidad { background: rgba(148, 163, 184, 0.14); color: #cbd5e1; border-color: rgba(203, 213, 225, 0.25); }
 
-    .sub-interfaces {
-      background: rgba(245, 158, 11, 0.12);
-      color: #fbbf24;
-      border-color: rgba(251, 191, 36, 0.25);
-    }
-    .sub-interfaces:hover { background: rgba(245, 158, 11, 0.22); }
-
-    .sub-datos {
-      background: rgba(16, 185, 129, 0.12);
-      color: #34d399;
-      border-color: rgba(52, 211, 153, 0.25);
-    }
-    .sub-datos:hover { background: rgba(16, 185, 129, 0.22); }
-
-    .sub-multimedia {
-      background: rgba(168, 85, 247, 0.12);
-      color: #c084fc;
-      border-color: rgba(192, 132, 252, 0.25);
-    }
-    .sub-multimedia:hover { background: rgba(168, 85, 247, 0.22); }
-
-    .sub-gestion {
-      background: rgba(239, 68, 68, 0.12);
-      color: #f87171;
-      border-color: rgba(248, 113, 113, 0.25);
-    }
-    .sub-gestion:hover { background: rgba(239, 68, 68, 0.22); }
-
-    .sub-servicios {
-      background: rgba(249, 115, 22, 0.12);
-      color: #fb923c;
-      border-color: rgba(251, 146, 60, 0.25);
-    }
-    .sub-servicios:hover { background: rgba(249, 115, 22, 0.22); }
-
-    .sub-digitalizacion {
-      background: rgba(99, 102, 241, 0.12);
-      color: #818cf8;
-      border-color: rgba(129, 140, 248, 0.25);
-    }
-    .sub-digitalizacion:hover { background: rgba(99, 102, 241, 0.22); }
-
-    .sub-ipe {
-      background: rgba(20, 184, 166, 0.12);
-      color: #2dd4bf;
-      border-color: rgba(45, 212, 191, 0.25);
-    }
-    .sub-ipe:hover { background: rgba(20, 184, 166, 0.22); }
-
-    .sub-sostenibilidad {
-      background: rgba(148, 163, 184, 0.12);
-      color: #cbd5e1;
-      border-color: rgba(203, 213, 225, 0.25);
-    }
-    .sub-sostenibilidad:hover { background: rgba(148, 163, 184, 0.22); }
-
-    /* Break / Recreo */
     .recreo-cell {
       padding: 10px;
       border-radius: 12px;
@@ -345,15 +387,14 @@
       text-transform: uppercase;
     }
 
-    /* Footer stats bar */
     .footer-stats {
       margin-top: 24px;
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 20px;
+      gap: 16px;
       color: var(--text-muted);
-      font-size: 0.85rem;
+      font-size: 0.82rem;
     }
     .stat-pill {
       background: rgba(255, 255, 255, 0.03);
@@ -377,24 +418,130 @@
   <header class="header">
     <div class="badge">
       <span class="badge-dot"></span>
-      Curso Académico 2025 – 2026
+      Curso Académico · DM2A
     </div>
-    <h1>Horario DM2A</h1>
-    <p class="subtitle">Desarrollo de Aplicaciones Multiplataforma · 2º Curso</p>
+    <h1>Horario y Límite de Faltas</h1>
+    <p class="subtitle">Desarrollo de Aplicaciones Multiplataforma &bull; Pérdida de evaluación continua (12% horas totales)</p>
   </header>
 
-  <!-- Subject Filter Pills -->
+  <!-- Tarjetas Resumen Pérdida de Continua -->
+  <section class="summary-section">
+    <div class="summary-title">⚠️ Límite de Faltas por Módulo (12% Currículo)</div>
+    <div class="summary-grid">
+      <div class="sum-card" data-cat="sub-multimedia">
+        <div class="sum-card-header">
+          <span class="sum-name">Progr. Multimedia y Móviles</span>
+          <span class="sum-tag sub-multimedia">6h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 198h</span>
+          <span class="sum-limit">Máx: 23,76h (~24h)</span>
+        </div>
+      </div>
+
+      <div class="sum-card" data-cat="sub-datos">
+        <div class="sum-card-header">
+          <span class="sum-name">Acceso a Datos</span>
+          <span class="sum-tag sub-datos">5h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 165h</span>
+          <span class="sum-limit">Máx: 19,80h (~20h)</span>
+        </div>
+      </div>
+
+      <div class="sum-card" data-cat="sub-interfaces">
+        <div class="sum-card-header">
+          <span class="sum-name">Desarrollo de Interfaces</span>
+          <span class="sum-tag sub-interfaces">5h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 165h</span>
+          <span class="sum-limit">Máx: 19,80h (~20h)</span>
+        </div>
+      </div>
+
+      <div class="sum-card" data-cat="sub-gestion">
+        <div class="sum-card-header">
+          <span class="sum-name">Sistemas de Gestión Empresarial</span>
+          <span class="sum-tag sub-gestion">5h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 165h</span>
+          <span class="sum-limit">Máx: 19,80h (~20h)</span>
+        </div>
+      </div>
+
+      <div class="sum-card" data-cat="sub-servicios">
+        <div class="sum-card-header">
+          <span class="sum-name">Progr. Servicios y Procesos</span>
+          <span class="sum-tag sub-servicios">2h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 66h</span>
+          <span class="sum-limit">Máx: 7,92h (~8h)</span>
+        </div>
+      </div>
+
+      <div class="sum-card" data-cat="sub-ipe">
+        <div class="sum-card-header">
+          <span class="sum-name">Itin. Pers. Empleabilidad II</span>
+          <span class="sum-tag sub-ipe">2h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 68h</span>
+          <span class="sum-limit">Máx: 8,16h (~8h)</span>
+        </div>
+      </div>
+
+      <div class="sum-card" data-cat="sub-nube">
+        <div class="sum-card-header">
+          <span class="sum-name">Computación en la Nube</span>
+          <span class="sum-tag sub-nube">3h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 54h</span>
+          <span class="sum-limit">Máx: 6,48h (~6h)</span>
+        </div>
+      </div>
+
+      <div class="sum-card" data-cat="sub-digitalizacion">
+        <div class="sum-card-header">
+          <span class="sum-name">Dig. Apl. Sectores Productivos</span>
+          <span class="sum-tag sub-digitalizacion">1h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 34h</span>
+          <span class="sum-limit">Máx: 4,08h (~4h)</span>
+        </div>
+      </div>
+
+      <div class="sum-card" data-cat="sub-sostenibilidad">
+        <div class="sum-card-header">
+          <span class="sum-name">Sostenibilidad Apl. Sist. Prod.</span>
+          <span class="sum-tag sub-sostenibilidad">1h/sem</span>
+        </div>
+        <div class="sum-details">
+          <span>Total: 34h</span>
+          <span class="sum-limit">Máx: 4,08h (~4h)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filtros -->
   <nav class="controls" id="filterNav">
     <button class="filter-btn active" data-filter="all">Todas las asignaturas</button>
-    <button class="filter-btn" data-filter="sub-nube">☁️ Computación en la nube</button>
+    <button class="filter-btn" data-filter="sub-nube">☁️ Nube</button>
     <button class="filter-btn" data-filter="sub-interfaces">💻 Interfaces</button>
-    <button class="filter-btn" data-filter="sub-datos">🗄️ Acceso a datos</button>
+    <button class="filter-btn" data-filter="sub-datos">🗄️ Datos</button>
     <button class="filter-btn" data-filter="sub-multimedia">📱 Móviles</button>
     <button class="filter-btn" data-filter="sub-gestion">📊 SGE</button>
-    <button class="filter-btn" data-filter="sub-servicios">⚡ Servicios y Procesos</button>
+    <button class="filter-btn" data-filter="sub-servicios">⚡ Procesos</button>
     <button class="filter-btn" data-filter="sub-ipe">💼 Empleabilidad</button>
   </nav>
 
+  <!-- Tabla Semanal con badges -->
   <main class="schedule-container">
     <div class="table-wrapper">
       <table>
@@ -409,76 +556,226 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Fila 1: 08:30 - 09:20 -->
+          <!-- 08:30 - 09:20 -->
           <tr>
             <td><div class="time-slot">08:30 – 09:20 <span>1ª Hora</span></div></td>
-            <td><div class="subject sub-nube" data-cat="sub-nube">Computación en la nube</div></td>
-            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
-            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
-            <td><div class="subject sub-digitalizacion" data-cat="sub-digitalizacion">Dig. apl. sec. productivos</div></td>
-            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
+            <td>
+              <div class="subject sub-nube" data-cat="sub-nube">
+                <span class="sub-title">Computación en la nube</span>
+                <span class="sub-badge">⚠️ Máx 6h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-interfaces" data-cat="sub-interfaces">
+                <span class="sub-title">Desarrollo de interfaces</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-datos" data-cat="sub-datos">
+                <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-digitalizacion" data-cat="sub-digitalizacion">
+                <span class="sub-title">Dig. apl. sec. prod.</span>
+                <span class="sub-badge">⚠️ Máx 4h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
           </tr>
 
-          <!-- Fila 2: 09:20 - 10:10 -->
+          <!-- 09:20 - 10:10 -->
           <tr>
             <td><div class="time-slot">09:20 – 10:10 <span>2ª Hora</span></div></td>
-            <td><div class="subject sub-nube" data-cat="sub-nube">Computación en la nube</div></td>
-            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
-            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
-            <td><div class="subject sub-ipe" data-cat="sub-ipe">Itin. pers. para empleab. II</div></td>
-            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
+            <td>
+              <div class="subject sub-nube" data-cat="sub-nube">
+                <span class="sub-title">Computación en la nube</span>
+                <span class="sub-badge">⚠️ Máx 6h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-datos" data-cat="sub-datos">
+                <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-ipe" data-cat="sub-ipe">
+                <span class="sub-title">Itin. pers. empleab. II</span>
+                <span class="sub-badge">⚠️ Máx 8h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
           </tr>
 
-          <!-- RECREO 1: 10:10 - 10:35 -->
+          <!-- RECREO 1 -->
           <tr>
             <td><div class="time-slot">10:10 – 10:35 <span>Pausa</span></div></td>
             <td colspan="5"><div class="recreo-cell">☕ R E C R E O</div></td>
           </tr>
 
-          <!-- Fila 3: 10:35 - 11:25 -->
+          <!-- 10:35 - 11:25 -->
           <tr>
             <td><div class="time-slot">10:35 – 11:25 <span>3ª Hora</span></div></td>
-            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
-            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
-            <td><div class="subject sub-servicios" data-cat="sub-servicios">Program. Servicios y Procesos</div></td>
-            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
-            <td><div class="subject sub-nube" data-cat="sub-nube">Computación en la nube</div></td>
+            <td>
+              <div class="subject sub-interfaces" data-cat="sub-interfaces">
+                <span class="sub-title">Desarrollo de interfaces</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-servicios" data-cat="sub-servicios">
+                <span class="sub-title">Program. Serv. y Procesos</span>
+                <span class="sub-badge">⚠️ Máx 8h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-datos" data-cat="sub-datos">
+                <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-nube" data-cat="sub-nube">
+                <span class="sub-title">Computación en la nube</span>
+                <span class="sub-badge">⚠️ Máx 6h</span>
+              </div>
+            </td>
           </tr>
 
-          <!-- Fila 4: 11:25 - 12:15 -->
+          <!-- 11:25 - 12:15 -->
           <tr>
             <td><div class="time-slot">11:25 – 12:15 <span>4ª Hora</span></div></td>
-            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
-            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
-            <td><div class="subject sub-servicios" data-cat="sub-servicios">Program. Servicios y Procesos</div></td>
-            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
-            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
+            <td>
+              <div class="subject sub-interfaces" data-cat="sub-interfaces">
+                <span class="sub-title">Desarrollo de interfaces</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-servicios" data-cat="sub-servicios">
+                <span class="sub-title">Program. Serv. y Procesos</span>
+                <span class="sub-badge">⚠️ Máx 8h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-datos" data-cat="sub-datos">
+                <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
           </tr>
 
-          <!-- RECREO 2: 12:15 - 12:40 -->
+          <!-- RECREO 2 -->
           <tr>
             <td><div class="time-slot">12:15 – 12:40 <span>Pausa</span></div></td>
             <td colspan="5"><div class="recreo-cell">🥪 R E C R E O</div></td>
           </tr>
 
-          <!-- Fila 5: 12:40 - 13:30 -->
+          <!-- 12:40 - 13:30 -->
           <tr>
             <td><div class="time-slot">12:40 – 13:30 <span>5ª Hora</span></div></td>
-            <td><div class="subject sub-ipe" data-cat="sub-ipe">Itin. pers. para empleab. II</div></td>
-            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
-            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
-            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
-            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
+            <td>
+              <div class="subject sub-ipe" data-cat="sub-ipe">
+                <span class="sub-title">Itin. pers. empleab. II</span>
+                <span class="sub-badge">⚠️ Máx 8h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-interfaces" data-cat="sub-interfaces">
+                <span class="sub-title">Desarrollo de interfaces</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
           </tr>
 
-          <!-- Fila 6: 13:30 - 14:20 -->
+          <!-- 13:30 - 14:20 -->
           <tr>
             <td><div class="time-slot">13:30 – 14:20 <span>6ª Hora</span></div></td>
-            <td><div class="subject sub-gestion" data-cat="sub-gestion">Sis. Ges. Empresarial</div></td>
-            <td><div class="subject sub-sostenibilidad" data-cat="sub-sostenibilidad">Sostenib. apl. al sis. prod.</div></td>
-            <td><div class="subject sub-multimedia" data-cat="sub-multimedia">Progr. Multim. y Disp. Móviles</div></td>
-            <td><div class="subject sub-interfaces" data-cat="sub-interfaces">Desarrollo de interfaces</div></td>
-            <td><div class="subject sub-datos" data-cat="sub-datos">Acceso a datos</div></td>
+            <td>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-sostenibilidad" data-cat="sub-sostenibilidad">
+                <span class="sub-title">Sostenib. apl. sist. prod.</span>
+                <span class="sub-badge">⚠️ Máx 4h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-interfaces" data-cat="sub-interfaces">
+                <span class="sub-title">Desarrollo de interfaces</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-datos" data-cat="sub-datos">
+                <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -486,46 +783,44 @@
   </main>
 
   <footer class="footer-stats">
-    <div class="stat-pill">⚡ Total lectivas: <strong>30h / semana</strong></div>
-    <div class="stat-pill">📍 Aula: <strong>C03</strong></div>
-    <div class="stat-pill">✨ Modo interactivo: Haz clic en una asignatura para resaltarla</div>
+    <div class="stat-pill">⚠️ Límite faltas: <strong>12% de las horas totales</strong></div>
+    <div class="stat-pill">⚡ Carga semanal: <strong>30h</strong></div>
+    <div class="stat-pill">✨ Haz clic en cualquier asignatura o tarjeta para filtrar</div>
   </footer>
 
   <script>
-    // Filtro interactivo de asignaturas
     const buttons = document.querySelectorAll('.filter-btn');
     const subjects = document.querySelectorAll('.subject');
+    const sumCards = document.querySelectorAll('.sum-card');
 
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const filter = btn.dataset.filter;
-
-        subjects.forEach(sub => {
-          if (filter === 'all') {
-            sub.classList.remove('dimmed', 'highlighted');
-          } else if (sub.dataset.cat === filter) {
-            sub.classList.remove('dimmed');
-            sub.classList.add('highlighted');
-          } else {
-            sub.classList.remove('highlighted');
-            sub.classList.add('dimmed');
-          }
-        });
+    function applyFilter(filter) {
+      buttons.forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === filter);
       });
-    });
 
-    // Clic directo en tarjetas para resaltar todas las iguales
-    subjects.forEach(card => {
-      card.addEventListener('click', () => {
-        const cat = card.dataset.cat;
-        const matchingBtn = document.querySelector(`.filter-btn[data-filter="${cat}"]`);
-        if (matchingBtn) {
-          matchingBtn.click();
+      subjects.forEach(sub => {
+        if (filter === 'all') {
+          sub.classList.remove('dimmed', 'highlighted');
+        } else if (sub.dataset.cat === filter) {
+          sub.classList.remove('dimmed');
+          sub.classList.add('highlighted');
+        } else {
+          sub.classList.remove('highlighted');
+          sub.classList.add('dimmed');
         }
       });
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
+    });
+
+    subjects.forEach(card => {
+      card.addEventListener('click', () => applyFilter(card.dataset.cat));
+    });
+
+    sumCards.forEach(card => {
+      card.addEventListener('click', () => applyFilter(card.dataset.cat));
     });
   </script>
 </body>
