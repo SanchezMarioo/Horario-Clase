@@ -7,6 +7,8 @@ import { readAbsences, calculateAbsenceStats } from '@/lib/absencesStore';
 import { getEventsAction } from '@/app/actions/calendar';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Panel de Administración · Horario DM2A',
   description: 'Control de asistencia, faltas y calendario protegidos por Clerk',
