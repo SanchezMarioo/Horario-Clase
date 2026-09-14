@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model AcademicEvent {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   // "exam" | "assignment" | "project" | "reminder"
+  subjectId   String   // "sub-multimedia", "sub-datos", etc. o "general"
+  date        String   // Formato "YYYY-MM-DD"
+  time        String?  // Formato "HH:mm" (opcional)
+  description String?
+  priority    String   @default("medium") // "low" | "medium" | "high"
+  completed   Boolean  @default(false)
+  isOfficial  Boolean  @default(false)    // Marcado por admin / delegado
+  authorId    String?  // Clerk userId
+  authorName  String?  // Nombre del alumno / autor
+  authorEmail String?  // Email del autor
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+  @@index([subjectId])
+}
+
+model Absence {
+  id        String   @id @default(cuid())
+  subjectId String   // Módulo de DM2A
+  date      String   // Formato "YYYY-MM-DD"
+  hours     Float    // Horas de falta acumuladas
+  justified Boolean  @default(false)
+  notes     String?
+  userId    String?  // Clerk userId que registró la falta
+  createdAt DateTime @default(now())
+
+  @@index([subjectId])
+}
