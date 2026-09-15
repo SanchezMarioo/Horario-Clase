@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { SubjectModule, SubjectId } from '@/types/schedule';
 import { ModuleAbsenceStats } from '@/types/absence';
 import { Plus } from 'lucide-react';
@@ -12,7 +12,7 @@ interface SummaryCardsProps {
   onRefresh?: () => void;
 }
 
-export default function SummaryCards({
+function SummaryCardsComponent({
   modules,
   activeFilter,
   onSelectCategory,
@@ -140,3 +140,5 @@ export default function SummaryCards({
     </section>
   );
 }
+
+export default memo(SummaryCardsComponent);

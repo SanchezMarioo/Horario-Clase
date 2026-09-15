@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { AcademicEvent } from '@/types/calendar';
 import { SUBJECT_MAP } from '@/data/scheduleData';
 import { Calendar, Clock, Plus, CheckCircle2, Star, User, AlertTriangle, Pencil } from 'lucide-react';
@@ -13,45 +13,45 @@ interface UpcomingEventsWidgetProps {
   isAdmin?: boolean;
 }
 
-export default function UpcomingEventsWidget({
+// Helpers puros extraídos fuera del componente para evitar recreación en cada render
+function getDaysLeftLabel(dateStr: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const target = new Date(year, month - 1, day);
+
+  const diffMs = target.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return { label: 'Pasado', color: 'bg-slate-700 text-slate-400' };
+  if (diffDays === 0) return { label: '¡HOY!', color: 'bg-red-500 text-white animate-pulse' };
+  if (diffDays === 1) return { label: 'Mañana', color: 'bg-amber-500 text-black font-bold' };
+  if (diffDays <= 3) return { label: `En ${diffDays} días`, color: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' };
+  if (diffDays <= 7) return { label: `En ${diffDays} días`, color: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' };
+  return { label: `En ${diffDays} días`, color: 'bg-white/10 text-slate-300' };
+}
+
+function getTypeLabel(type: AcademicEvent['type']) {
+  switch (type) {
+    case 'exam':
+      return { label: 'Examen', icon: '📝', badge: 'bg-red-500/20 text-red-300 border-red-500/30' };
+    case 'assignment':
+      return { label: 'Tarea', icon: '📋', badge: 'bg-sky-500/20 text-sky-300 border-sky-500/30' };
+    case 'project':
+      return { label: 'Proyecto', icon: '🚀', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30' };
+    case 'reminder':
+      return { label: 'Aviso', icon: '⏰', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
+  }
+}
+
+function UpcomingEventsWidgetComponent({
   events,
   onRefresh,
   isAdmin = false,
 }: UpcomingEventsWidgetProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AcademicEvent | null>(null);
-
-  // Calcular diferencia de días
-  const getDaysLeftLabel = (dateStr: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const target = new Date(year, month - 1, day);
-
-    const diffMs = target.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) return { label: 'Pasado', color: 'bg-slate-700 text-slate-400' };
-    if (diffDays === 0) return { label: '¡HOY!', color: 'bg-red-500 text-white animate-pulse' };
-    if (diffDays === 1) return { label: 'Mañana', color: 'bg-amber-500 text-black font-bold' };
-    if (diffDays <= 3) return { label: `En ${diffDays} días`, color: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' };
-    if (diffDays <= 7) return { label: `En ${diffDays} días`, color: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' };
-    return { label: `En ${diffDays} días`, color: 'bg-white/10 text-slate-300' };
-  };
-
-  const getTypeLabel = (type: AcademicEvent['type']) => {
-    switch (type) {
-      case 'exam':
-        return { label: 'Examen', icon: '📝', badge: 'bg-red-500/20 text-red-300 border-red-500/30' };
-      case 'assignment':
-        return { label: 'Tarea', icon: '📋', badge: 'bg-sky-500/20 text-sky-300 border-sky-500/30' };
-      case 'project':
-        return { label: 'Proyecto', icon: '🚀', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30' };
-      case 'reminder':
-        return { label: 'Aviso', icon: '⏰', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
-    }
-  };
 
   const handleToggleComplete = async (id: string) => {
     await toggleEventCompleteAction(id);
@@ -210,3 +210,5 @@ export default function UpcomingEventsWidget({
     </section>
   );
 }
+
+export default memo(UpcomingEventsWidgetComponent);

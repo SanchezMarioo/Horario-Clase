@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { FilterItem, SubjectId } from '@/types/schedule';
 
 interface FilterBarProps {
@@ -7,7 +7,7 @@ interface FilterBarProps {
   onSelectCategory: (categoryId: 'all' | SubjectId) => void;
 }
 
-export default function FilterBar({
+function FilterBarComponent({
   filters,
   activeFilter,
   onSelectCategory,
@@ -38,3 +38,5 @@ export default function FilterBar({
     </nav>
   );
 }
+
+export default memo(FilterBarComponent);

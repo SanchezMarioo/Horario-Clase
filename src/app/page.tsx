@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import SummaryCards from '@/components/SummaryCards';
 import FilterBar from '@/components/FilterBar';
@@ -31,41 +31,45 @@ export default function SchedulePage() {
   const [upcomingEvents, setUpcomingEvents] = useState<AcademicEvent[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
-  const loadData = async () => {
-    // 1. Estadísticas de faltas
-    const absRes = await getPublicStatsAction();
-    if (absRes.success && absRes.data) {
-      const mapping = absRes.data.reduce((acc, stat) => {
-        acc[stat.subjectId] = stat;
-        return acc;
-      }, {} as Record<SubjectId, ModuleAbsenceStats>);
-      setAbsenceStatsMap(mapping);
-    }
+  const loadData = useCallback(async () => {
+    try {
+      // Carga en paralelo de todas las fuentes de datos (evita waterfalls de red)
+      const [absRes, upRes, allRes, adminCheck] = await Promise.all([
+        getPublicStatsAction(),
+        getUpcomingEventsAction(6),
+        getEventsAction(),
+        checkIsAdminAction(),
+      ]);
 
-    // 2. Próximos eventos
-    const upRes = await getUpcomingEventsAction(6);
-    if (upRes.success && upRes.data) {
-      setUpcomingEvents(upRes.data);
-    }
+      if (absRes.success && absRes.data) {
+        const mapping = absRes.data.reduce((acc, stat) => {
+          acc[stat.subjectId] = stat;
+          return acc;
+        }, {} as Record<SubjectId, ModuleAbsenceStats>);
+        setAbsenceStatsMap(mapping);
+      }
 
-    // 3. Todos los eventos del calendario
-    const allRes = await getEventsAction();
-    if (allRes.success && allRes.data) {
-      setAllEvents(allRes.data);
-    }
+      if (upRes.success && upRes.data) {
+        setUpcomingEvents(upRes.data);
+      }
 
-    // 4. Verificación de permisos de administrador
-    const adminCheck = await checkIsAdminAction();
-    setIsAdmin(adminCheck.isAdmin);
-  };
+      if (allRes.success && allRes.data) {
+        setAllEvents(allRes.data);
+      }
+
+      setIsAdmin(adminCheck.isAdmin);
+    } catch (err) {
+      console.error('Error al cargar los datos de inicio:', err);
+    }
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const handleSelectCategory = (categoryId: 'all' | SubjectId) => {
+  const handleSelectCategory = useCallback((categoryId: 'all' | SubjectId) => {
     setActiveFilter(categoryId);
-  };
+  }, []);
 
   return (
     <div className="w-full flex flex-col items-center">

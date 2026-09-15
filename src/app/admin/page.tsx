@@ -1,8 +1,7 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import { readAbsences, calculateAbsenceStats } from '@/lib/absencesStore';
 import { getEventsAction } from '@/app/actions/calendar';
 import { getAdminsAction } from '@/app/actions/admins';
@@ -12,7 +11,7 @@ import AdminRequestCard from '@/components/admin/AdminRequestCard';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Panel de Administración · Horario DM2A',
   description: 'Control de asistencia, faltas y calendario protegidos por Clerk',
 };

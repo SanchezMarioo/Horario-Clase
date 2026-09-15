@@ -2,6 +2,7 @@ import { prisma } from './prisma';
 import { AbsenceRecord, CreateAbsenceInput, ModuleAbsenceStats } from '@/types/absence';
 import { SUBJECT_MODULES } from '@/data/scheduleData';
 import { SubjectId } from '@/types/schedule';
+import { calculateModuleStatsFromRecords } from './absenceStats';
 
 // Límite de faltas numérico exacto (12% del currículo) por módulo
 export const MODULE_LIMITS: Record<SubjectId, number> = {
@@ -96,39 +97,5 @@ export async function calculateAbsenceStats(
     ? await readAbsences(userId)
     : [];
 
-  return SUBJECT_MODULES.map((mod) => {
-    const modRecords = records.filter((r) => r.subjectId === mod.id);
-    const totalAbsenceHours = modRecords.reduce((sum, r) => sum + r.hours, 0);
-    const justifiedHours = modRecords
-      .filter((r) => r.justified)
-      .reduce((sum, r) => sum + r.hours, 0);
-    const unjustifiedHours = totalAbsenceHours - justifiedHours;
-
-    const maxAllowed = MODULE_LIMITS[mod.id];
-    const remainingHours = Math.max(0, Number((maxAllowed - totalAbsenceHours).toFixed(2)));
-    const percentageUsed = Math.min(
-      100,
-      Number(((totalAbsenceHours / maxAllowed) * 100).toFixed(1))
-    );
-
-    let status: 'safe' | 'warning' | 'danger' = 'safe';
-    if (percentageUsed >= 80) {
-      status = 'danger';
-    } else if (percentageUsed >= 50) {
-      status = 'warning';
-    }
-
-    return {
-      subjectId: mod.id,
-      name: mod.name,
-      shortName: mod.shortName,
-      maxAllowedHours: maxAllowed,
-      totalAbsenceHours: Number(totalAbsenceHours.toFixed(2)),
-      justifiedHours: Number(justifiedHours.toFixed(2)),
-      unjustifiedHours: Number(unjustifiedHours.toFixed(2)),
-      remainingHours,
-      percentageUsed,
-      status,
-    };
-  });
+  return calculateModuleStatsFromRecords(records);
 }

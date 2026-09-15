@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AcademicEvent, CalendarEventType } from '@/types/calendar';
 import { SUBJECT_MAP } from '@/data/scheduleData';
 import {
@@ -87,65 +87,81 @@ export default function CalendarMonthView({
     setSelectedDateStr(getTodayStr());
   };
 
-  // Cálculo de la cuadrícula de días
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
+  // Cálculo memoizado de la cuadrícula de días (solo cuando cambia el mes o año)
+  const calendarCells = useMemo(() => {
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
 
-  // En JS, getDay(): 0=Dom, 1=Lun, ..., 6=Sab. Ajustamos a 0=Lun ... 6=Dom
-  let startDayIndex = firstDayOfMonth.getDay() - 1;
-  if (startDayIndex === -1) startDayIndex = 6;
+    let startDayIndex = firstDayOfMonth.getDay() - 1;
+    if (startDayIndex === -1) startDayIndex = 6;
 
-  const daysInMonth = lastDayOfMonth.getDate();
+    const daysInMonth = lastDayOfMonth.getDate();
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
 
-  // Días del mes anterior para rellenar
-  const prevMonthLastDay = new Date(year, month, 0).getDate();
-  const calendarCells: {
-    key: string;
-    dateStr: string;
-    dayNumber: number;
-    isCurrentMonth: boolean;
-  }[] = [];
+    const cells: {
+      key: string;
+      dateStr: string;
+      dayNumber: number;
+      isCurrentMonth: boolean;
+    }[] = [];
 
-  for (let i = startDayIndex - 1; i >= 0; i--) {
-    const d = prevMonthLastDay - i;
-    const dateStr = formatLocalDate(year, month - 1, d);
-    calendarCells.push({
-      key: `prev-${dateStr}`,
-      dateStr,
-      dayNumber: d,
-      isCurrentMonth: false,
-    });
-  }
+    // Días del mes anterior para rellenar
+    for (let i = startDayIndex - 1; i >= 0; i--) {
+      const d = prevMonthLastDay - i;
+      const dateStr = formatLocalDate(year, month - 1, d);
+      cells.push({
+        key: `prev-${dateStr}`,
+        dateStr,
+        dayNumber: d,
+        isCurrentMonth: false,
+      });
+    }
 
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = formatLocalDate(year, month, d);
-    calendarCells.push({
-      key: `curr-${dateStr}`,
-      dateStr,
-      dayNumber: d,
-      isCurrentMonth: true,
-    });
-  }
+    // Días del mes actual
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = formatLocalDate(year, month, d);
+      cells.push({
+        key: `curr-${dateStr}`,
+        dateStr,
+        dayNumber: d,
+        isCurrentMonth: true,
+      });
+    }
 
-  // Días del mes siguiente para completar la cuadrícula (35 o 42 celdas completas)
-  const totalCellsNeeded = calendarCells.length > 35 ? 42 : 35;
-  const remainingCells = totalCellsNeeded - calendarCells.length;
-  for (let d = 1; d <= remainingCells; d++) {
-    const dateStr = formatLocalDate(year, month + 1, d);
-    calendarCells.push({
-      key: `next-${dateStr}`,
-      dateStr,
-      dayNumber: d,
-      isCurrentMonth: false,
-    });
-  }
+    // Días del mes siguiente para completar la cuadrícula (35 o 42 celdas completas)
+    const totalCellsNeeded = cells.length > 35 ? 42 : 35;
+    const remainingCells = totalCellsNeeded - cells.length;
+    for (let d = 1; d <= remainingCells; d++) {
+      const dateStr = formatLocalDate(year, month + 1, d);
+      cells.push({
+        key: `next-${dateStr}`,
+        dateStr,
+        dayNumber: d,
+        isCurrentMonth: false,
+      });
+    }
 
-  // Filtrado de eventos
-  const filteredEvents =
-    filterType === 'all' ? events : events.filter((e) => e.type === filterType);
+    return cells;
+  }, [year, month]);
 
-  // Eventos para el día seleccionado
-  const selectedDayEvents = filteredEvents.filter((e) => e.date === selectedDateStr);
+  // Indexación O(1) de eventos por fecha
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, AcademicEvent[]> = {};
+    for (const ev of events) {
+      if (filterType !== 'all' && ev.type !== filterType) continue;
+      if (!map[ev.date]) {
+        map[ev.date] = [];
+      }
+      map[ev.date].push(ev);
+    }
+    return map;
+  }, [events, filterType]);
+
+  // Eventos para el día seleccionado (búsqueda instantánea O(1))
+  const selectedDayEvents = useMemo(
+    () => eventsByDate[selectedDateStr] || [],
+    [eventsByDate, selectedDateStr]
+  );
 
   const todayStr = getTodayStr();
 
@@ -273,7 +289,7 @@ export default function CalendarMonthView({
           {/* Días del mes */}
           <div className="grid grid-cols-7 gap-1.5">
             {calendarCells.map((cell) => {
-              const dayEvents = filteredEvents.filter((e) => e.date === cell.dateStr);
+              const dayEvents = eventsByDate[cell.dateStr] || [];
               const isSelected = cell.dateStr === selectedDateStr;
               const isToday = cell.dateStr === todayStr;
               const hasExams = dayEvents.some((e) => e.type === 'exam');

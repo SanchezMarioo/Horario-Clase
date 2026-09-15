@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { TimeSlot, SubjectId } from '@/types/schedule';
 import { SUBJECT_MAP } from '@/data/scheduleData';
 
@@ -8,7 +8,7 @@ interface ScheduleTableProps {
   onSelectCategory: (categoryId: 'all' | SubjectId) => void;
 }
 
-export default function ScheduleTable({
+function ScheduleTableComponent({
   slots,
   activeFilter,
   onSelectCategory,
@@ -112,3 +112,5 @@ export default function ScheduleTable({
     </main>
   );
 }
+
+export default memo(ScheduleTableComponent);
