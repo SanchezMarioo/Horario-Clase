@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import {
@@ -33,6 +34,11 @@ export default function AddAbsenceModal({
 }: AddAbsenceModalProps) {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const getTodayStr = () => {
     const now = new Date();
@@ -52,7 +58,16 @@ export default function AddAbsenceModal({
 
   const [isPending, startTransition] = useTransition();
 
-  if (!isOpen) return null;
+  // Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted) return null;
 
   const currentMod = SUBJECT_MAP[subjectId];
 
@@ -92,13 +107,19 @@ export default function AddAbsenceModal({
     });
   };
 
-  return (
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-3xl shadow-2xl backdrop-blur-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto">
+      <div 
+        className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-3xl shadow-2xl backdrop-blur-2xl flex flex-col max-h-[90vh] overflow-hidden my-auto animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Cabecera fija */}
         <div className="p-5 sm:p-6 pb-4 border-b border-white/[0.08] flex items-start justify-between gap-3 bg-slate-900/90 shrink-0">
           <div>
@@ -303,4 +324,6 @@ export default function AddAbsenceModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
