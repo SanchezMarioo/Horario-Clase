@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { AcademicEvent } from '@/types/calendar';
 import { SUBJECT_MAP } from '@/data/scheduleData';
-import { Calendar, Clock, Plus, CheckCircle2, Star, User, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, Plus, CheckCircle2, Star, User, AlertTriangle, Pencil } from 'lucide-react';
 import AddEventModal from './AddEventModal';
 import { toggleEventCompleteAction } from '@/app/actions/calendar';
 
@@ -19,6 +19,7 @@ export default function UpcomingEventsWidget({
   isAdmin = false,
 }: UpcomingEventsWidgetProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<AcademicEvent | null>(null);
 
   // Calcular diferencia de días
   const getDaysLeftLabel = (dateStr: string) => {
@@ -72,7 +73,10 @@ export default function UpcomingEventsWidget({
         {isAdmin ? (
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingEvent(null);
+              setIsModalOpen(true);
+            }}
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
           >
             <Plus size={15} /> Añadir Tarea / Examen
@@ -124,11 +128,26 @@ export default function UpcomingEventsWidget({
                     )}
                   </div>
 
-                  <span
-                    className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap ${daysInfo.color}`}
-                  >
-                    {daysInfo.label}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap ${daysInfo.color}`}
+                    >
+                      {daysInfo.label}
+                    </span>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingEvent(ev);
+                          setIsModalOpen(true);
+                        }}
+                        className="p-1 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-white/10 transition-colors cursor-pointer"
+                        title="Editar tarea o examen"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Título y Asignatura */}
@@ -177,12 +196,16 @@ export default function UpcomingEventsWidget({
         </div>
       )}
 
-      {/* Modal para añadir tareas/exámenes */}
+      {/* Modal para añadir o editar tareas/exámenes */}
       <AddEventModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingEvent(null);
+        }}
         onEventAdded={onRefresh}
         isAdmin={isAdmin}
+        eventToEdit={editingEvent}
       />
     </section>
   );

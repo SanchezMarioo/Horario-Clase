@@ -44,6 +44,45 @@ const createEventSchema = z.object({
   isOfficial: z.boolean().optional(),
 });
 
+const updateEventSchema = z.object({
+  id: z.string().min(1, 'El identificador del evento es obligatorio'),
+  title: z
+    .string()
+    .min(3, 'El título debe tener al menos 3 caracteres')
+    .max(100, 'El título no puede superar 100 caracteres')
+    .transform((val) => val.trim().replace(/[<>]/g, '')),
+  type: z.enum(['exam', 'assignment', 'project', 'reminder'], {
+    message: 'Tipo de evento inválido',
+  }),
+  subjectId: z.enum([
+    'sub-multimedia',
+    'sub-datos',
+    'sub-interfaces',
+    'sub-gestion',
+    'sub-servicios',
+    'sub-ipe',
+    'sub-nube',
+    'sub-digitalizacion',
+    'sub-sostenibilidad',
+    'general',
+  ]),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato de fecha inválido (AAAA-MM-DD)'),
+  time: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:mm)')
+    .optional()
+    .or(z.literal('')),
+  description: z
+    .string()
+    .max(500, 'La descripción no puede superar 500 caracteres')
+    .optional()
+    .transform((val) => val?.trim().replace(/[<>]/g, '')),
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+  isOfficial: z.boolean().optional(),
+  completed: z.boolean().optional(),
+});
+
+
 export type CalendarActionResponse<T> = {
   success: boolean;
   data?: T;
@@ -246,3 +285,73 @@ export async function toggleEventCompleteAction(
     };
   }
 }
+
+/**
+ * Actualizar un evento académico (Restringido exclusivamente a Administradores)
+ */
+export async function updateEventAction(
+  input: unknown
+): Promise<CalendarActionResponse<AcademicEvent>> {
+  try {
+    await verifyAdminAuth();
+    const validated = updateEventSchema.parse(input);
+
+    const existing = await prisma.academicEvent.findUnique({
+      where: { id: validated.id },
+    });
+
+    if (!existing) {
+      return { success: false, error: 'Evento no encontrado' };
+    }
+
+    const updated = await prisma.academicEvent.update({
+      where: { id: validated.id },
+      data: {
+        title: validated.title,
+        type: validated.type,
+        subjectId: validated.subjectId,
+        date: validated.date,
+        time: validated.time && validated.time.length > 0 ? validated.time : null,
+        description: validated.description ?? null,
+        priority: validated.priority,
+        isOfficial:
+          validated.isOfficial !== undefined ? Boolean(validated.isOfficial) : existing.isOfficial,
+        completed:
+          validated.completed !== undefined ? Boolean(validated.completed) : existing.completed,
+      },
+    });
+
+    revalidatePath('/');
+    revalidatePath('/admin');
+
+    return {
+      success: true,
+      data: {
+        id: updated.id,
+        title: updated.title,
+        type: updated.type as CalendarEventType,
+        subjectId: updated.subjectId as SubjectId | 'general',
+        date: updated.date,
+        time: updated.time ?? undefined,
+        description: updated.description ?? undefined,
+        priority: updated.priority as EventPriority,
+        completed: updated.completed,
+        isOfficial: updated.isOfficial,
+        authorId: updated.authorId ?? undefined,
+        authorName: updated.authorName ?? undefined,
+        authorEmail: updated.authorEmail ?? undefined,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.issues[0]?.message || 'Datos no válidos' };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al actualizar el evento',
+    };
+  }
+}
+

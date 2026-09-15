@@ -15,12 +15,13 @@ import {
   Loader2,
   BookOpen,
   Send,
+  Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { CalendarEventType, EventPriority } from '@/types/calendar';
+import { AcademicEvent, CalendarEventType, EventPriority } from '@/types/calendar';
 import { SubjectId } from '@/types/schedule';
 import { SUBJECT_MODULES } from '@/data/scheduleData';
-import { createEventAction } from '@/app/actions/calendar';
+import { createEventAction, updateEventAction } from '@/app/actions/calendar';
 
 interface AddEventModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ interface AddEventModalProps {
   onEventAdded?: () => void;
   defaultDate?: string;
   isAdmin?: boolean;
+  eventToEdit?: AcademicEvent | null;
 }
 
 export default function AddEventModal({
@@ -36,6 +38,7 @@ export default function AddEventModal({
   onEventAdded,
   defaultDate,
   isAdmin = false,
+  eventToEdit,
 }: AddEventModalProps) {
   const { isSignedIn, isLoaded } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -53,6 +56,8 @@ export default function AddEventModal({
     return `${y}-${m}-${d}`;
   };
 
+  const isEditing = Boolean(eventToEdit);
+
   const [title, setTitle] = useState('');
   const [type, setType] = useState<CalendarEventType>('exam');
   const [subjectId, setSubjectId] = useState<SubjectId | 'general'>('sub-multimedia');
@@ -62,12 +67,30 @@ export default function AddEventModal({
   const [description, setDescription] = useState('');
   const [isOfficial, setIsOfficial] = useState(true);
 
-  // Sincronizar fecha seleccionada cuando cambia la casilla del calendario o se abre el modal
+  // Sincronizar datos al abrir o cambiar de evento a editar
   useEffect(() => {
     if (isOpen) {
-      setDate(defaultDate || getInitialDate());
+      if (eventToEdit) {
+        setTitle(eventToEdit.title);
+        setType(eventToEdit.type);
+        setSubjectId(eventToEdit.subjectId);
+        setDate(eventToEdit.date);
+        setTime(eventToEdit.time || '');
+        setPriority(eventToEdit.priority);
+        setDescription(eventToEdit.description || '');
+        setIsOfficial(eventToEdit.isOfficial);
+      } else {
+        setTitle('');
+        setType('exam');
+        setSubjectId('sub-multimedia');
+        setDate(defaultDate || getInitialDate());
+        setTime('');
+        setPriority('medium');
+        setDescription('');
+        setIsOfficial(true);
+      }
     }
-  }, [isOpen, defaultDate]);
+  }, [isOpen, eventToEdit, defaultDate]);
 
   // Cerrar con Escape
   useEffect(() => {
@@ -94,31 +117,52 @@ export default function AddEventModal({
 
     startTransition(async () => {
       try {
-        const res = await createEventAction({
-          title: title.trim(),
-          type,
-          subjectId,
-          date,
-          time: time || undefined,
-          priority,
-          description: description.trim() ? description.trim() : undefined,
-          isOfficial: isAdmin ? isOfficial : true,
-        });
+        const res = isEditing && eventToEdit
+          ? await updateEventAction({
+              id: eventToEdit.id,
+              title: title.trim(),
+              type,
+              subjectId,
+              date,
+              time: time || undefined,
+              priority,
+              description: description.trim() ? description.trim() : undefined,
+              isOfficial: isAdmin ? isOfficial : eventToEdit.isOfficial,
+            })
+          : await createEventAction({
+              title: title.trim(),
+              type,
+              subjectId,
+              date,
+              time: time || undefined,
+              priority,
+              description: description.trim() ? description.trim() : undefined,
+              isOfficial: isAdmin ? isOfficial : true,
+            });
 
         if (!res.success) {
-          toast.error('Error al guardar el evento', {
+          toast.error(isEditing ? 'Error al actualizar el evento' : 'Error al guardar el evento', {
             description: res.error || 'No se pudo registrar el evento.',
           });
           return;
         }
 
-        toast.success('¡Evento publicado en el calendario oficial!', {
-          description: `"${title}" ya está visible para toda la clase.`,
-        });
+        toast.success(
+          isEditing
+            ? '¡Evento actualizado con éxito!'
+            : '¡Evento publicado en el calendario oficial!',
+          {
+            description: isEditing
+              ? `"${title}" ha sido modificado en el calendario.`
+              : `"${title}" ya está visible para toda la clase.`,
+          }
+        );
 
-        setTitle('');
-        setDescription('');
-        setTime('');
+        if (!isEditing) {
+          setTitle('');
+          setDescription('');
+          setTime('');
+        }
         if (onEventAdded) onEventAdded();
         onClose();
       } catch (error) {
@@ -147,17 +191,27 @@ export default function AddEventModal({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(99,102,241,0.25)]">
-                <Sparkles size={13} className="text-indigo-400 animate-pulse" /> Calendario Oficial DM2A
+                {isEditing ? (
+                  <>
+                    <Pencil size={13} className="text-indigo-400" /> Modo Edición
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} className="text-indigo-400 animate-pulse" /> Calendario Oficial DM2A
+                  </>
+                )}
               </span>
               <span className="text-[11px] font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                 Solo Admins
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Añadir Tarea o Examen
+              {isEditing ? 'Editar Tarea o Examen' : 'Añadir Tarea o Examen'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Publica entregas o fechas clave para que aparezcan en la agenda de todo el grupo.
+              {isEditing
+                ? 'Modifica los detalles, fecha límite o temática de esta entrega.'
+                : 'Publica entregas o fechas clave para que aparezcan en la agenda de todo el grupo.'}
             </p>
           </div>
 
@@ -396,12 +450,12 @@ export default function AddEventModal({
                 {isPending ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Publicando...
+                    {isEditing ? 'Guardando cambios...' : 'Publicando...'}
                   </>
                 ) : (
                   <>
-                    <Send size={15} />
-                    Publicar en el Calendario
+                    {isEditing ? <Pencil size={15} /> : <Send size={15} />}
+                    {isEditing ? 'Guardar Cambios' : 'Publicar en el Calendario'}
                   </>
                 )}
               </button>

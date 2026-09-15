@@ -13,6 +13,7 @@ import {
   Calendar as CalendarIcon,
   Star,
   User,
+  Pencil,
 } from 'lucide-react';
 import AddEventModal from './AddEventModal';
 import { deleteEventAction, toggleEventCompleteAction } from '@/app/actions/calendar';
@@ -66,6 +67,7 @@ export default function CalendarMonthView({
   const [selectedDateStr, setSelectedDateStr] = useState<string>(getTodayStr());
   const [filterType, setFilterType] = useState<'all' | CalendarEventType>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<AcademicEvent | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -239,7 +241,10 @@ export default function CalendarMonthView({
           {isAdmin && (
             <button
               type="button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setEditingEvent(null);
+                setIsModalOpen(true);
+              }}
               className="ml-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
             >
               <Plus size={14} /> Añadir
@@ -360,13 +365,18 @@ export default function CalendarMonthView({
                 </h3>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(true)}
-                className="p-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 text-xs font-bold transition-all flex items-center gap-1"
-              >
-                <Plus size={14} /> Añadir
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingEvent(null);
+                    setIsModalOpen(true);
+                  }}
+                  className="p-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus size={14} /> Añadir
+                </button>
+              )}
             </div>
 
             {selectedDayEvents.length === 0 ? (
@@ -394,14 +404,27 @@ export default function CalendarMonthView({
                           {ev.title}
                         </span>
                         {canDelete && (
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(ev.id, ev.title)}
-                            className="text-slate-500 hover:text-red-400 transition-colors p-1"
-                            title="Eliminar evento"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingEvent(ev);
+                                setIsModalOpen(true);
+                              }}
+                              className="text-slate-500 hover:text-indigo-400 transition-colors p-1 cursor-pointer"
+                              title="Editar evento"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(ev.id, ev.title)}
+                              className="text-slate-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
+                              title="Eliminar evento"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         )}
                       </div>
 
@@ -466,10 +489,14 @@ export default function CalendarMonthView({
 
       <AddEventModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingEvent(null);
+        }}
         onEventAdded={onRefresh}
         defaultDate={selectedDateStr}
         isAdmin={isAdmin}
+        eventToEdit={editingEvent}
       />
     </div>
   );

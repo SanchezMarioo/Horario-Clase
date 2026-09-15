@@ -31,3 +31,17 @@ export type CreateEventInput = {
   priority: EventPriority;
   isOfficial?: boolean;
 };
+
+export type UpdateEventInput = {
+  id: string;
+  title: string;
+  type: CalendarEventType;
+  subjectId: SubjectId | 'general';
+  date: string;
+  time?: string;
+  description?: string;
+  priority: EventPriority;
+  isOfficial?: boolean;
+  completed?: boolean;
+};
+
