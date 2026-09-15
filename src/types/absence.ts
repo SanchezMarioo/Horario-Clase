@@ -9,6 +9,8 @@ export interface AbsenceRecord {
   notes?: string;
   createdAt: string;
   createdBy?: string; // Clerk userId
+  createdByName?: string;
+  createdByEmail?: string;
 }
 
 export type CreateAbsenceInput = Omit<AbsenceRecord, 'id' | 'createdAt' | 'createdBy'>;

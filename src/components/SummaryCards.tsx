@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SubjectModule, SubjectId } from '@/types/schedule';
 import { ModuleAbsenceStats } from '@/types/absence';
+import { Plus } from 'lucide-react';
+import AddAbsenceModal from '@/components/absences/AddAbsenceModal';
 
 interface SummaryCardsProps {
   modules: SubjectModule[];
   activeFilter: 'all' | SubjectId;
   onSelectCategory: (categoryId: 'all' | SubjectId) => void;
   absenceStats?: Record<SubjectId, ModuleAbsenceStats>;
+  onRefresh?: () => void;
 }
 
 export default function SummaryCards({
@@ -14,19 +17,38 @@ export default function SummaryCards({
   activeFilter,
   onSelectCategory,
   absenceStats,
+  onRefresh,
 }: SummaryCardsProps) {
+  const [isAbsenceModalOpen, setIsAbsenceModalOpen] = useState(false);
+
   return (
     <section className="w-full max-w-[1240px] mb-6">
-      <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
           <span>⚠️</span> Límite de Faltas por Módulo (12% Currículo)
         </div>
-        {absenceStats && (
-          <span className="text-[11px] text-indigo-300 font-medium normal-case">
-            Sincronizado con panel de faltas
-          </span>
-        )}
+
+        <div className="flex items-center gap-3">
+          {absenceStats && (
+            <span className="text-[11px] text-indigo-300 font-medium hidden sm:inline">
+              Sincronizado con base de datos
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsAbsenceModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+          >
+            <Plus size={14} /> Registrar Falta
+          </button>
+        </div>
       </div>
+
+      <AddAbsenceModal
+        isOpen={isAbsenceModalOpen}
+        onClose={() => setIsAbsenceModalOpen(false)}
+        onAbsenceAdded={onRefresh}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {modules.map((mod) => {

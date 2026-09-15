@@ -16,6 +16,11 @@ import {
   ShieldCheck,
   Percent,
   Table2,
+  UserPlus,
+  Users,
+  Copy,
+  Check,
+  KeyRound,
 } from 'lucide-react';
 import { AbsenceRecord, ModuleAbsenceStats } from '@/types/absence';
 import { AcademicEvent } from '@/types/calendar';
@@ -23,7 +28,9 @@ import { SubjectId } from '@/types/schedule';
 import { SUBJECT_MODULES } from '@/data/scheduleData';
 import { addAbsenceAction, deleteAbsenceAction } from '@/app/actions/absences';
 import { getEventsAction } from '@/app/actions/calendar';
+import { addAdminAction, removeAdminAction, AdminItem } from '@/app/actions/admins';
 import CalendarMonthView from '@/components/calendar/CalendarMonthView';
+import { ADMIN_INVITE_CODE } from '@/lib/constants';
 
 import { toast } from 'sonner';
 
@@ -31,6 +38,7 @@ interface AdminDashboardProps {
   initialRecords: AbsenceRecord[];
   initialStats: ModuleAbsenceStats[];
   initialEvents?: AcademicEvent[];
+  initialAdmins?: AdminItem[];
   userEmail?: string;
 }
 
@@ -38,13 +46,20 @@ export default function AdminDashboard({
   initialRecords,
   initialStats,
   initialEvents = [],
+  initialAdmins = [],
   userEmail,
 }: AdminDashboardProps) {
-  const [activeSection, setActiveSection] = useState<'faltas' | 'calendario'>('faltas');
+  const [activeSection, setActiveSection] = useState<'faltas' | 'calendario' | 'admins'>('faltas');
   const [records, setRecords] = useState<AbsenceRecord[]>(initialRecords);
   const [stats, setStats] = useState<ModuleAbsenceStats[]>(initialStats);
   const [events, setEvents] = useState<AcademicEvent[]>(initialEvents);
+  const [admins, setAdmins] = useState<AdminItem[]>(initialAdmins);
   const [selectedFilter, setSelectedFilter] = useState<'all' | SubjectId>('all');
+
+  // Form State para Dar de alta Admin
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminName, setNewAdminName] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
 
   // Form State para Faltas
   const getTodayStr = () => {
@@ -156,6 +171,64 @@ export default function AdminDashboard({
     });
   };
 
+  const handleAddAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdminEmail.trim()) {
+      toast.error('Introduce el correo del nuevo administrador');
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await addAdminAction({
+        email: newAdminEmail.trim(),
+        name: newAdminName.trim() ? newAdminName.trim() : undefined,
+      });
+
+      if (!res.success || !res.data) {
+        toast.error('Error al añadir administrador', {
+          description: res.error || 'Verifica los datos ingresados.',
+        });
+        return;
+      }
+
+      setAdmins([res.data, ...admins]);
+      setNewAdminEmail('');
+      setNewAdminName('');
+      toast.success(res.message || 'Administrador registrado con éxito');
+    });
+  };
+
+  const handleRemoveAdmin = (adm: AdminItem) => {
+    toast(`¿Revocar permisos de administrador a ${adm.email}?`, {
+      description: 'Ya no podrá gestionar el calendario ni dar de alta a otros administradores.',
+      action: {
+        label: 'Revocar',
+        onClick: () => {
+          startTransition(async () => {
+            const res = await removeAdminAction(adm.id);
+            if (!res.success) {
+              toast.error('Error al revocar', { description: res.error });
+              return;
+            }
+            setAdmins(admins.filter((a) => a.id !== adm.id));
+            toast.success(res.message || 'Permisos revocados con éxito');
+          });
+        },
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => {},
+      },
+    });
+  };
+
+  const handleCopyInviteCode = () => {
+    navigator.clipboard.writeText(ADMIN_INVITE_CODE);
+    setCopiedCode(true);
+    toast.success('¡Código de invitación copiado al portapapeles!');
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
   // Métricas globales
   const totalFaltasAcumuladas = records.reduce((acc, r) => acc + r.hours, 0);
   const totalJustificadas = records.filter((r) => r.justified).reduce((acc, r) => acc + r.hours, 0);
@@ -227,6 +300,21 @@ export default function AdminDashboard({
           <Calendar size={16} /> Gestión del Calendario y Exámenes
           <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/10 text-white">
             {events.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('admins')}
+          className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            activeSection === 'admins'
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+              : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+          }`}
+        >
+          <ShieldCheck size={16} /> Administradores
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/10 text-white">
+            {admins.length}
           </span>
         </button>
       </div>
@@ -556,9 +644,177 @@ export default function AdminDashboard({
             </div>
           </div>
         </>
-      ) : (
+      ) : activeSection === 'calendario' ? (
         /* Vista de Administración de Calendario */
         <CalendarMonthView events={events} isAdmin={true} onRefresh={reloadEvents} />
+      ) : (
+        /* Vista de Gestión de Administradores */
+        <section className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Formulario: Dar de alta a un Administrador */}
+            <div className="bg-slate-900/60 border border-white/[0.08] p-5 sm:p-6 rounded-3xl backdrop-blur-xl flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
+                  <UserPlus size={20} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-white">Dar de alta a un Administrador</h2>
+                  <p className="text-[11px] text-slate-400">
+                    Añade un compañero por su correo electrónico.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleAddAdmin} className="flex flex-col gap-3.5">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Correo Electrónico *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="ejemplo@gmail.com"
+                    value={newAdminEmail}
+                    onChange={(e) => setNewAdminEmail(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    Nombre / Rol (opcional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Delegado DM2A, Mario..."
+                    value={newAdminName}
+                    onChange={(e) => setNewAdminName(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="mt-1 w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  <UserPlus size={15} />
+                  {isPending ? 'Guardando...' : 'Dar de Alta como Admin'}
+                </button>
+              </form>
+
+              {/* Tarjeta de Código de Invitación Rápido */}
+              <div className="mt-2 p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider">
+                    <KeyRound size={13} /> Código de Invitación Rápido
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyInviteCode}
+                    className="text-[11px] text-indigo-300 hover:text-white flex items-center gap-1 bg-indigo-500/20 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                  >
+                    {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+                    {copiedCode ? 'Copiado' : 'Copiar'}
+                  </button>
+                </div>
+                <code className="font-mono text-xs font-bold text-white bg-slate-950 px-3 py-2 rounded-xl border border-white/10 tracking-widest text-center">
+                  {ADMIN_INVITE_CODE}
+                </code>
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                  Cualquier compañero registrado en Clerk puede introducir este código al acceder a <code className="text-indigo-300">/admin</code> para activarse automáticamente.
+                </p>
+              </div>
+            </div>
+
+            {/* Tabla de Administradores Registrados */}
+            <div className="lg:col-span-2 bg-slate-900/60 border border-white/[0.08] p-5 sm:p-6 rounded-3xl backdrop-blur-xl flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-white">Administradores Activos</h2>
+                    <p className="text-[11px] text-slate-400">
+                      Usuarios con permisos para publicar exámenes y gestionar el sistema.
+                    </p>
+                  </div>
+                </div>
+
+                <span className="text-xs font-bold text-indigo-300 bg-indigo-500/10 px-3 py-1 rounded-xl border border-indigo-500/20">
+                  {admins.length} {admins.length === 1 ? 'Admin' : 'Admins'}
+                </span>
+              </div>
+
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-[11px] uppercase tracking-wider text-slate-400 border-b border-white/[0.08]">
+                      <th className="pb-3 pl-2">Administrador</th>
+                      <th className="pb-3">Alta Por</th>
+                      <th className="pb-3">Fecha</th>
+                      <th className="pb-3 text-right pr-2">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {admins.map((adm) => {
+                      const isCurrentUser = adm.email.toLowerCase() === userEmail?.toLowerCase();
+
+                      return (
+                        <tr key={adm.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="py-3 pl-2">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-white flex items-center gap-1.5">
+                                {adm.email}
+                                {isCurrentUser && (
+                                  <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.2 rounded">
+                                    Tú
+                                  </span>
+                                )}
+                                {adm.isEnvSuperadmin && (
+                                  <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded">
+                                    Superadmin
+                                  </span>
+                                )}
+                              </span>
+                              {adm.name && (
+                                <span className="text-[11px] text-slate-400">{adm.name}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 text-slate-400 text-[11px]">
+                            {adm.addedBy || 'Directo'}
+                          </td>
+                          <td className="py-3 text-slate-400 text-[11px] whitespace-nowrap">
+                            {adm.createdAt ? adm.createdAt.split('T')[0] : '—'}
+                          </td>
+                          <td className="py-3 text-right pr-2">
+                            {!adm.isEnvSuperadmin && !isCurrentUser ? (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAdmin(adm)}
+                                disabled={isPending}
+                                title="Revocar permisos"
+                                className="px-2.5 py-1 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                              >
+                                Revocar
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-slate-600 italic">
+                                {isCurrentUser ? 'Protegido' : 'Solo en .env'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
     </div>
   );

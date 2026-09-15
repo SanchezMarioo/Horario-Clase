@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { AcademicEvent, CalendarEventType, EventPriority } from '@/types/calendar';
 import { SubjectId } from '@/types/schedule';
+import { isUserAdmin, verifyAdminAuth } from '@/lib/adminAuth';
 
 const createEventSchema = z.object({
   title: z
@@ -48,20 +49,6 @@ export type CalendarActionResponse<T> = {
   data?: T;
   error?: string;
 };
-
-// Helper para verificar si un email es admin
-function isUserAdmin(email?: string): boolean {
-  if (!email) return false;
-  const adminEmailsEnv = process.env.ADMIN_EMAILS;
-  if (!adminEmailsEnv || adminEmailsEnv.trim().length === 0) {
-    return true; // En desarrollo sin whitelist, cualquier usuario logueado actúa con permisos completos
-  }
-  const admins = adminEmailsEnv
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  return admins.includes(email.toLowerCase());
-}
 
 /**
  * Obtener todos los eventos académicos (Acceso público de solo lectura)
@@ -143,30 +130,14 @@ export async function getUpcomingEventsAction(
 }
 
 /**
- * Crear un evento académico (Cualquier estudiante autenticado en Clerk puede publicar)
+ * Crear un evento académico (Restringido exclusivamente a Administradores)
  */
 export async function createEventAction(
   input: unknown
 ): Promise<CalendarActionResponse<AcademicEvent>> {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return { success: false, error: 'Debes iniciar sesión para publicar una tarea o examen.' };
-    }
-
-    const user = await currentUser();
-    const userEmail = user?.primaryEmailAddress?.emailAddress;
-    const userName =
-      user?.fullName ||
-      (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null) ||
-      userEmail?.split('@')[0] ||
-      'Compañero';
-
+    const { userId, userEmail, userName } = await verifyAdminAuth();
     const validated = createEventSchema.parse(input);
-    const isAdmin = isUserAdmin(userEmail);
-
-    // Solo los administradores pueden marcar un evento como Oficial
-    const isOfficial = isAdmin ? Boolean(validated.isOfficial) : false;
 
     const created = await prisma.academicEvent.create({
       data: {
@@ -178,7 +149,7 @@ export async function createEventAction(
         description: validated.description ?? null,
         priority: validated.priority,
         completed: false,
-        isOfficial,
+        isOfficial: Boolean(validated.isOfficial),
         authorId: userId,
         authorName: userName,
         authorEmail: userEmail ?? null,
@@ -220,27 +191,15 @@ export async function createEventAction(
 }
 
 /**
- * Eliminar un evento (Solo el autor o un administrador pueden eliminarlo)
+ * Eliminar un evento (Restringido a Administradores)
  */
 export async function deleteEventAction(id: string): Promise<CalendarActionResponse<boolean>> {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return { success: false, error: 'No autorizado' };
-    }
-
-    const user = await currentUser();
-    const userEmail = user?.primaryEmailAddress?.emailAddress;
-    const isAdmin = isUserAdmin(userEmail);
+    await verifyAdminAuth();
 
     const event = await prisma.academicEvent.findUnique({ where: { id } });
     if (!event) {
       return { success: false, error: 'Evento no encontrado' };
-    }
-
-    // Permitir borrar si es admin o si es el autor
-    if (!isAdmin && event.authorId !== userId) {
-      return { success: false, error: 'Solo el creador de la tarea o un admin pueden eliminarla.' };
     }
 
     await prisma.academicEvent.delete({ where: { id } });
@@ -258,16 +217,13 @@ export async function deleteEventAction(id: string): Promise<CalendarActionRespo
 }
 
 /**
- * Alternar estado completado / pendiente de una tarea
+ * Alternar estado completado / pendiente de una tarea (Restringido a Administradores)
  */
 export async function toggleEventCompleteAction(
   id: string
 ): Promise<CalendarActionResponse<boolean>> {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return { success: false, error: 'Debes iniciar sesión para marcar una tarea.' };
-    }
+    await verifyAdminAuth();
 
     const event = await prisma.academicEvent.findUnique({ where: { id } });
     if (!event) {

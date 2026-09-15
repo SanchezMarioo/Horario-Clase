@@ -18,6 +18,7 @@ import { ModuleAbsenceStats } from '@/types/absence';
 import { AcademicEvent } from '@/types/calendar';
 import { getPublicStatsAction } from '@/app/actions/absences';
 import { getEventsAction, getUpcomingEventsAction } from '@/app/actions/calendar';
+import { checkIsAdminAction } from '@/app/actions/admins';
 import { Calendar, Table2 } from 'lucide-react';
 
 export default function SchedulePage() {
@@ -28,6 +29,7 @@ export default function SchedulePage() {
   >(undefined);
   const [allEvents, setAllEvents] = useState<AcademicEvent[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<AcademicEvent[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const loadData = async () => {
     // 1. Estadísticas de faltas
@@ -51,6 +53,10 @@ export default function SchedulePage() {
     if (allRes.success && allRes.data) {
       setAllEvents(allRes.data);
     }
+
+    // 4. Verificación de permisos de administrador
+    const adminCheck = await checkIsAdminAction();
+    setIsAdmin(adminCheck.isAdmin);
   };
 
   useEffect(() => {
@@ -98,8 +104,12 @@ export default function SchedulePage() {
 
       {activeTab === 'horario' ? (
         <>
-          {/* Widget superior de próximos exámenes y tareas */}
-          <UpcomingEventsWidget events={upcomingEvents} onRefresh={loadData} />
+          {/* Widget superior de próximos exámenes y tareas (Solo admin puede añadir) */}
+          <UpcomingEventsWidget
+            events={upcomingEvents}
+            onRefresh={loadData}
+            isAdmin={isAdmin}
+          />
 
           {/* Resumen de límites de faltas sincronizado con ausencias */}
           <SummaryCards
@@ -107,6 +117,7 @@ export default function SchedulePage() {
             activeFilter={activeFilter}
             onSelectCategory={handleSelectCategory}
             absenceStats={absenceStatsMap}
+            onRefresh={loadData}
           />
 
           {/* Barra de Filtros */}
@@ -125,7 +136,11 @@ export default function SchedulePage() {
         </>
       ) : (
         /* Vista de Calendario Mensual Completo */
-        <CalendarMonthView events={allEvents} onRefresh={loadData} />
+        <CalendarMonthView
+          events={allEvents}
+          onRefresh={loadData}
+          isAdmin={isAdmin}
+        />
       )}
 
       {/* Pie de página con estadísticas */}

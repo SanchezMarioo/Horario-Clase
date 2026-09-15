@@ -37,7 +37,17 @@ model Absence {
   justified Boolean  @default(false)
   notes     String?
   userId    String?  // Clerk userId que registró la falta
+  userName  String?  // Nombre del usuario que registró la falta
+  userEmail String?  // Email del usuario que registró la falta
   createdAt DateTime @default(now())
 
   @@index([subjectId])
+}
+
+model AppAdmin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  addedBy   String?  // Email o nombre de quien le otorgó los permisos
+  createdAt DateTime @default(now())
 }

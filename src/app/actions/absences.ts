@@ -9,6 +9,8 @@ import {
   readAbsences,
   calculateAbsenceStats,
 } from '@/lib/absencesStore';
+import { prisma } from '@/lib/prisma';
+import { getCurrentUserAuth, isUserAdmin } from '@/lib/adminAuth';
 import { AbsenceRecord, ModuleAbsenceStats } from '@/types/absence';
 
 // Esquema Zod para validación estricta en servidor
@@ -76,16 +78,22 @@ export type ActionResponse<T> = {
 };
 
 /**
- * Server action para registrar una falta (Protegido para administradores)
+ * Server action para registrar una falta (Accesible para cualquier estudiante/usuario autenticado)
  */
 export async function addAbsenceAction(
   formData: unknown
 ): Promise<ActionResponse<AbsenceRecord>> {
   try {
-    const userId = await verifyAdminAuth();
+    const { userId, userName, userEmail } = await getCurrentUserAuth();
     const validatedData = createAbsenceSchema.parse(formData);
 
-    const record = await createAbsence(validatedData, userId);
+    const record = await createAbsence(
+      validatedData,
+      userId,
+      userName,
+      userEmail
+    );
+
     revalidatePath('/admin');
     revalidatePath('/');
 
@@ -102,14 +110,30 @@ export async function addAbsenceAction(
 }
 
 /**
- * Server action para eliminar una falta (Protegido para administradores)
+ * Server action para eliminar una falta (Permitido para el creador de la falta o administradores)
  */
 export async function deleteAbsenceAction(id: string): Promise<ActionResponse<boolean>> {
   try {
-    await verifyAdminAuth();
+    const { userId, userEmail } = await getCurrentUserAuth();
 
     if (!id || typeof id !== 'string') {
       return { success: false, error: 'ID de falta inválido' };
+    }
+
+    const isAdmin = await isUserAdmin(userEmail);
+
+    if (!isAdmin) {
+      // Si no es admin, verificar que la falta haya sido creada por este usuario
+      const existing = await prisma.absence.findUnique({ where: { id } });
+      if (!existing) {
+        return { success: false, error: 'Falta no encontrada' };
+      }
+      if (existing.userId !== userId) {
+        return {
+          success: false,
+          error: 'Solo puedes eliminar las faltas que hayas registrado tú o un administrador.',
+        };
+      }
     }
 
     const deleted = await deleteAbsenceById(id);

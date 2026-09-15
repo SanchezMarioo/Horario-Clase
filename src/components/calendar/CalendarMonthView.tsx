@@ -236,13 +236,15 @@ export default function CalendarMonthView({
             </button>
           ))}
 
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="ml-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
-          >
-            <Plus size={14} /> Añadir
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="ml-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
+            >
+              <Plus size={14} /> Añadir
+            </button>
+          )}
         </div>
       </div>
 
@@ -376,7 +378,7 @@ export default function CalendarMonthView({
               <div className="flex flex-col gap-3 max-h-[460px] overflow-y-auto pr-1">
                 {selectedDayEvents.map((ev) => {
                   const subject = ev.subjectId !== 'general' ? SUBJECT_MAP[ev.subjectId] : null;
-                  const canDelete = isAdmin || (userId && ev.authorId === userId);
+                  const canDelete = isAdmin;
 
                   return (
                     <div
@@ -433,15 +435,25 @@ export default function CalendarMonthView({
                         <span className="truncate max-w-[140px] flex items-center gap-1">
                           <User size={10} /> {ev.authorName || 'Compañero'}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => handleToggle(ev.id, ev.completed)}
-                          className={`font-semibold hover:underline ${
-                            ev.completed ? 'text-emerald-400' : 'text-slate-400'
-                          }`}
-                        >
-                          {ev.completed ? '✓ Hecho' : '○ Pendiente'}
-                        </button>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggle(ev.id, ev.completed)}
+                            className={`font-semibold hover:underline cursor-pointer ${
+                              ev.completed ? 'text-emerald-400' : 'text-slate-400'
+                            }`}
+                          >
+                            {ev.completed ? '✓ Hecho' : '○ Pendiente'}
+                          </button>
+                        ) : (
+                          <span
+                            className={`font-semibold ${
+                              ev.completed ? 'text-emerald-400' : 'text-slate-500'
+                            }`}
+                          >
+                            {ev.completed ? '✓ Hecho' : '○ Pendiente'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

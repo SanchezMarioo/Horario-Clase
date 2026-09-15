@@ -69,13 +69,19 @@ export default function UpcomingEventsWidget({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
-        >
-          <Plus size={15} /> Añadir Tarea / Examen
-        </button>
+        {isAdmin ? (
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
+          >
+            <Plus size={15} /> Añadir Tarea / Examen
+          </button>
+        ) : (
+          <span className="text-[11px] font-medium text-slate-400 bg-white/[0.03] px-3 py-1 rounded-xl border border-white/5">
+            📅 Calendario oficial gestionado por administradores
+          </span>
+        )}
       </div>
 
       {events.length === 0 ? (

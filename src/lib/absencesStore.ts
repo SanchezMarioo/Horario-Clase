@@ -31,6 +31,8 @@ export async function readAbsences(): Promise<AbsenceRecord[]> {
       notes: a.notes ?? undefined,
       createdAt: a.createdAt.toISOString(),
       createdBy: a.userId ?? undefined,
+      createdByName: a.userName ?? undefined,
+      createdByEmail: a.userEmail ?? undefined,
     }));
   } catch (error) {
     console.error('Error querying absences from database:', error);
@@ -40,7 +42,9 @@ export async function readAbsences(): Promise<AbsenceRecord[]> {
 
 export async function createAbsence(
   input: CreateAbsenceInput,
-  userId?: string
+  userId?: string,
+  userName?: string,
+  userEmail?: string
 ): Promise<AbsenceRecord> {
   const created = await prisma.absence.create({
     data: {
@@ -50,6 +54,8 @@ export async function createAbsence(
       justified: input.justified,
       notes: input.notes,
       userId,
+      userName,
+      userEmail,
     },
   });
 
@@ -62,6 +68,8 @@ export async function createAbsence(
     notes: created.notes ?? undefined,
     createdAt: created.createdAt.toISOString(),
     createdBy: created.userId ?? undefined,
+    createdByName: created.userName ?? undefined,
+    createdByEmail: created.userEmail ?? undefined,
   };
 }
 
