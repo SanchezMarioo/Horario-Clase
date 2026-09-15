@@ -128,7 +128,7 @@ export default function AddAbsenceModal({
             </span>
             <h2 className="text-lg sm:text-xl font-bold text-white">Registrar Falta de Asistencia</h2>
             <p className="text-xs text-slate-400">
-              Cualquier compañero puede registrar horas de falta para monitorizar el límite del 12%.
+              Tus faltas son individuales y privadas. Monitoriza tu propio límite del 12% por módulo.
             </p>
           </div>
 
@@ -155,7 +155,7 @@ export default function AddAbsenceModal({
             </div>
             <h3 className="text-sm font-bold text-white">Inicio de sesión requerido</h3>
             <p className="text-xs text-slate-300 max-w-xs leading-relaxed">
-              Inicia sesión con tu cuenta para anotar tus faltas o las del grupo y mantener las estadísticas sincronizadas.
+              Inicia sesión con tu cuenta para registrar y llevar el control de tus faltas personales.
             </p>
             <Link
               href="/sign-in"

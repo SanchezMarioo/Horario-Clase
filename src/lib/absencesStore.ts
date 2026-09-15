@@ -16,9 +16,10 @@ export const MODULE_LIMITS: Record<SubjectId, number> = {
   'sub-sostenibilidad': 4.08,
 };
 
-export async function readAbsences(): Promise<AbsenceRecord[]> {
+export async function readAbsences(userId?: string): Promise<AbsenceRecord[]> {
   try {
     const absences = await prisma.absence.findMany({
+      where: userId ? { userId } : undefined,
       orderBy: { date: 'desc' },
     });
 
@@ -85,8 +86,15 @@ export async function deleteAbsenceById(id: string): Promise<boolean> {
   }
 }
 
-export async function calculateAbsenceStats(): Promise<ModuleAbsenceStats[]> {
-  const records = await readAbsences();
+export async function calculateAbsenceStats(
+  userId?: string | null,
+  allUsers = false
+): Promise<ModuleAbsenceStats[]> {
+  const records = allUsers
+    ? await readAbsences()
+    : userId
+    ? await readAbsences(userId)
+    : [];
 
   return SUBJECT_MODULES.map((mod) => {
     const modRecords = records.filter((r) => r.subjectId === mod.id);

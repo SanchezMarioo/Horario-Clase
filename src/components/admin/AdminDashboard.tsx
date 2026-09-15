@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import {
@@ -18,9 +18,9 @@ import {
   Table2,
   UserPlus,
   Users,
-  Copy,
   Check,
-  KeyRound,
+  X,
+  UserCheck,
 } from 'lucide-react';
 import { AbsenceRecord, ModuleAbsenceStats } from '@/types/absence';
 import { AcademicEvent } from '@/types/calendar';
@@ -28,10 +28,17 @@ import { SubjectId } from '@/types/schedule';
 import { SUBJECT_MODULES } from '@/data/scheduleData';
 import { addAbsenceAction, deleteAbsenceAction } from '@/app/actions/absences';
 import { getEventsAction } from '@/app/actions/calendar';
-import { addAdminAction, removeAdminAction, AdminItem } from '@/app/actions/admins';
+import {
+  addAdminAction,
+  removeAdminAction,
+  AdminItem,
+  AdminRequestItem,
+  getPendingAdminRequestsAction,
+  approveAdminRequestAction,
+  rejectAdminRequestAction,
+  getAdminsAction,
+} from '@/app/actions/admins';
 import CalendarMonthView from '@/components/calendar/CalendarMonthView';
-import { ADMIN_INVITE_CODE } from '@/lib/constants';
-
 import { toast } from 'sonner';
 
 interface AdminDashboardProps {
@@ -40,6 +47,7 @@ interface AdminDashboardProps {
   initialEvents?: AcademicEvent[];
   initialAdmins?: AdminItem[];
   userEmail?: string;
+  isSuperAdmin?: boolean;
 }
 
 export default function AdminDashboard({
@@ -48,18 +56,20 @@ export default function AdminDashboard({
   initialEvents = [],
   initialAdmins = [],
   userEmail,
+  isSuperAdmin = false,
 }: AdminDashboardProps) {
   const [activeSection, setActiveSection] = useState<'faltas' | 'calendario' | 'admins'>('faltas');
   const [records, setRecords] = useState<AbsenceRecord[]>(initialRecords);
   const [stats, setStats] = useState<ModuleAbsenceStats[]>(initialStats);
   const [events, setEvents] = useState<AcademicEvent[]>(initialEvents);
   const [admins, setAdmins] = useState<AdminItem[]>(initialAdmins);
+  const [pendingRequests, setPendingRequests] = useState<AdminRequestItem[]>([]);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [selectedFilter, setSelectedFilter] = useState<'all' | SubjectId>('all');
 
   // Form State para Dar de alta Admin
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminName, setNewAdminName] = useState('');
-  const [copiedCode, setCopiedCode] = useState(false);
 
   // Form State para Faltas
   const getTodayStr = () => {
@@ -144,31 +154,111 @@ export default function AdminDashboard({
     });
   };
 
-  const handleDeleteAbsence = (id: string, subjectName: string) => {
-    toast(`¿Eliminar registro de falta?`, {
-      description: `Se eliminará la falta registrada en ${subjectName}.`,
-      action: {
-        label: 'Eliminar',
-        onClick: () => {
-          startTransition(async () => {
-            const res = await deleteAbsenceAction(id);
-            if (!res.success) {
-              toast.error('Error al eliminar', { description: res.error });
-              return;
-            }
+  useEffect(() => {
+    const loadRequests = async () => {
+      const res = await getPendingAdminRequestsAction();
+      if (res.success && res.data) {
+        setPendingRequests(res.data);
+      }
+    };
+    loadRequests();
+  }, []);
 
-            const updated = records.filter((r) => r.id !== id);
-            setRecords(updated);
-            refreshStats(updated);
-            toast.success('Registro de falta eliminado');
-          });
-        },
-      },
-      cancel: {
-        label: 'Cancelar',
-        onClick: () => {},
-      },
+  const reloadRequests = async () => {
+    const res = await getPendingAdminRequestsAction();
+    if (res.success && res.data) {
+      setPendingRequests(res.data);
+    }
+  };
+
+  const handleApproveRequest = async (requestId: string, targetEmail: string) => {
+    setPendingRequests((prev) => prev.filter((r) => r.id !== requestId));
+
+    toast.success('Aprobando solicitud...', {
+      id: 'admin-req-toast',
+      duration: 1800,
     });
+
+    try {
+      const res = await approveAdminRequestAction(requestId);
+      if (!res.success) {
+        toast.error('Error al aprobar', {
+          id: 'admin-req-toast',
+          description: res.error,
+        });
+        reloadRequests();
+        return;
+      }
+
+      toast.success(`¡${targetEmail} ahora es Administrador!`, {
+        id: 'admin-req-toast',
+        duration: 2500,
+      });
+
+      const adminsRes = await getAdminsAction();
+      if (adminsRes.success && adminsRes.data) {
+        setAdmins(adminsRes.data);
+      }
+    } catch {
+      toast.error('Error al procesar la aprobación', { id: 'admin-req-toast' });
+      reloadRequests();
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string, targetEmail: string) => {
+    setPendingRequests((prev) => prev.filter((r) => r.id !== requestId));
+
+    toast.info(`Solicitud de ${targetEmail} rechazada`, {
+      id: 'admin-req-toast',
+      duration: 2000,
+    });
+
+    try {
+      await rejectAdminRequestAction(requestId);
+    } catch {
+      reloadRequests();
+    }
+  };
+
+  const handleDeleteAbsence = async (id: string, subjectName: string) => {
+    if (deletingIds.has(id)) return;
+
+    setDeletingIds((prev) => new Set(prev).add(id));
+
+    // Optimistic update: eliminar instantáneamente de la lista en pantalla
+    const previousRecords = records;
+    const updated = records.filter((r) => r.id !== id);
+    setRecords(updated);
+    refreshStats(updated);
+
+    // Toast unificado por ID: nunca se acumulan ni saturan el DOM
+    toast.success('Falta eliminada', {
+      id: 'absence-delete-toast',
+      description: `${subjectName} actualizada.`,
+      duration: 1800,
+    });
+
+    try {
+      const res = await deleteAbsenceAction(id);
+      if (!res.success) {
+        setRecords(previousRecords);
+        refreshStats(previousRecords);
+        toast.error('Error al eliminar en el servidor', {
+          id: 'absence-delete-toast',
+          description: res.error,
+        });
+      }
+    } catch {
+      setRecords(previousRecords);
+      refreshStats(previousRecords);
+      toast.error('Error de conexión', { id: 'absence-delete-toast' });
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
   };
 
   const handleAddAdmin = (e: React.FormEvent) => {
@@ -200,6 +290,7 @@ export default function AdminDashboard({
 
   const handleRemoveAdmin = (adm: AdminItem) => {
     toast(`¿Revocar permisos de administrador a ${adm.email}?`, {
+      id: 'revoke-confirm-toast',
       description: 'Ya no podrá gestionar el calendario ni dar de alta a otros administradores.',
       action: {
         label: 'Revocar',
@@ -207,11 +298,11 @@ export default function AdminDashboard({
           startTransition(async () => {
             const res = await removeAdminAction(adm.id);
             if (!res.success) {
-              toast.error('Error al revocar', { description: res.error });
+              toast.error('Error al revocar', { id: 'revoke-confirm-toast', description: res.error });
               return;
             }
             setAdmins(admins.filter((a) => a.id !== adm.id));
-            toast.success(res.message || 'Permisos revocados con éxito');
+            toast.success(res.message || 'Permisos revocados con éxito', { id: 'revoke-confirm-toast' });
           });
         },
       },
@@ -220,13 +311,6 @@ export default function AdminDashboard({
         onClick: () => {},
       },
     });
-  };
-
-  const handleCopyInviteCode = () => {
-    navigator.clipboard.writeText(ADMIN_INVITE_CODE);
-    setCopiedCode(true);
-    toast.success('¡Código de invitación copiado al portapapeles!');
-    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   // Métricas globales
@@ -265,7 +349,15 @@ export default function AdminDashboard({
 
         <div className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] px-3.5 py-1.5 rounded-xl">
           <div className="text-right">
-            <span className="text-[11px] block text-slate-400">Sesión iniciada</span>
+            <span className="text-[11px] block text-slate-400">
+              {isSuperAdmin ? (
+                <span className="text-amber-400 font-bold flex items-center gap-1 justify-end">
+                  ⭐ Superadministrador
+                </span>
+              ) : (
+                'Administrador'
+              )}
+            </span>
             <span className="text-xs font-semibold text-indigo-300">
               {userEmail || 'Administrador'}
             </span>
@@ -313,6 +405,11 @@ export default function AdminDashboard({
           }`}
         >
           <ShieldCheck size={16} /> Administradores
+          {pendingRequests.length > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-black font-extrabold animate-pulse">
+              {pendingRequests.length}
+            </span>
+          )}
           <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/10 text-white">
             {admins.length}
           </span>
@@ -703,26 +800,13 @@ export default function AdminDashboard({
                 </button>
               </form>
 
-              {/* Tarjeta de Código de Invitación Rápido */}
-              <div className="mt-2 p-4 rounded-2xl bg-indigo-950/30 border border-indigo-500/30 flex flex-col gap-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider">
-                    <KeyRound size={13} /> Código de Invitación Rápido
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleCopyInviteCode}
-                    className="text-[11px] text-indigo-300 hover:text-white flex items-center gap-1 bg-indigo-500/20 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
-                  >
-                    {copiedCode ? <Check size={12} /> : <Copy size={12} />}
-                    {copiedCode ? 'Copiado' : 'Copiar'}
-                  </button>
-                </div>
-                <code className="font-mono text-xs font-bold text-white bg-slate-950 px-3 py-2 rounded-xl border border-white/10 tracking-widest text-center">
-                  {ADMIN_INVITE_CODE}
-                </code>
-                <p className="text-[10px] text-slate-400 leading-relaxed">
-                  Cualquier compañero registrado en Clerk puede introducir este código al acceder a <code className="text-indigo-300">/admin</code> para activarse automáticamente.
+              {/* Tarjeta Informativa de Solicitudes */}
+              <div className="mt-2 p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/20 flex flex-col gap-2">
+                <span className="text-[11px] font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck size={13} /> Sistema de Solicitudes
+                </span>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Cualquier alumno puede acceder a <code className="text-indigo-300">/admin</code> y solicitar permisos de administrador. Como superadministrador puedes revisar y aprobar sus peticiones en la sección inferior.
                 </p>
               </div>
             </div>
@@ -772,8 +856,8 @@ export default function AdminDashboard({
                                     Tú
                                   </span>
                                 )}
-                                {adm.isEnvSuperadmin && (
-                                  <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded">
+                                {(adm.isSuper || adm.isEnvSuperadmin) && (
+                                  <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-bold">
                                     Superadmin
                                   </span>
                                 )}
@@ -812,6 +896,91 @@ export default function AdminDashboard({
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* Sección de Solicitudes de Acceso Pendientes */}
+            <div className="lg:col-span-3 bg-slate-900/60 border border-white/[0.08] p-5 sm:p-6 rounded-3xl backdrop-blur-xl flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
+                    <UserCheck size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                      Solicitudes de Acceso a Administrador
+                      {pendingRequests.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                          {pendingRequests.length} pendientes
+                        </span>
+                      )}
+                    </h2>
+                    <p className="text-[11px] text-slate-400">
+                      Alumnos que han solicitado rol de administrador. Los superadministradores pueden aceptarlas o rechazarlas.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={reloadRequests}
+                  className="text-xs font-semibold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                >
+                  Actualizar Lista
+                </button>
+              </div>
+
+              {pendingRequests.length === 0 ? (
+                <div className="py-6 text-center text-slate-500 text-xs bg-white/[0.01] rounded-2xl border border-white/[0.04] flex flex-col items-center gap-1.5">
+                  <CheckCircle2 size={24} className="text-slate-600" />
+                  <span>No hay solicitudes de acceso pendientes en este momento.</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {pendingRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      className="p-4 rounded-2xl bg-slate-950/80 border border-amber-500/30 flex flex-col justify-between gap-3 shadow-sm"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-start">
+                          <span className="text-xs font-bold text-white">{req.userName || 'Alumno'}</span>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(req.createdAt).toLocaleDateString('es-ES', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        <span className="text-xs font-mono text-indigo-300">{req.userEmail}</span>
+                        {req.reason && (
+                          <p className="text-[11px] text-slate-300 italic bg-white/[0.03] p-2 rounded-xl mt-1 border border-white/5">
+                            &ldquo;{req.reason}&rdquo;
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/[0.06]">
+                        <button
+                          type="button"
+                          onClick={() => handleRejectRequest(req.id, req.userEmail)}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border border-white/10 hover:border-red-500/30"
+                        >
+                          <X size={13} /> Rechazar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleApproveRequest(req.id, req.userEmail)}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Check size={13} /> Aceptar como Admin
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>

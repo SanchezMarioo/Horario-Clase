@@ -6,8 +6,9 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import {
   isUserAdmin,
+  isUserSuperAdmin,
   verifyAdminAuth,
-  ADMIN_INVITE_CODE,
+  verifySuperAdminAuth,
 } from '@/lib/adminAuth';
 
 const addAdminSchema = z.object({
@@ -20,6 +21,7 @@ const addAdminSchema = z.object({
     .max(60, 'El nombre no puede exceder 60 caracteres')
     .optional()
     .transform((n) => n?.trim().replace(/[<>]/g, '')),
+  isSuper: z.boolean().optional(),
 });
 
 export type AdminItem = {
@@ -28,7 +30,20 @@ export type AdminItem = {
   name: string | null;
   addedBy: string | null;
   createdAt: string;
+  isSuper?: boolean;
   isEnvSuperadmin?: boolean;
+};
+
+export type AdminRequestItem = {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string | null;
+  reason: string | null;
+  status: string;
+  reviewedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type AdminActionResponse<T> = {
@@ -56,6 +71,7 @@ export async function getAdminsAction(): Promise<AdminActionResponse<AdminItem[]
       name: a.name,
       addedBy: a.addedBy,
       createdAt: a.createdAt.toISOString(),
+      isSuper: a.isSuper,
       isEnvSuperadmin: false,
     }));
 
@@ -191,19 +207,15 @@ export async function removeAdminAction(
 }
 
 /**
- * Permite a cualquier usuario autenticado auto-activarse como administrador
- * mediante un código de invitación (proceso rápido y directo).
+ * Permite a un usuario autenticado enviar una solicitud para ser Administrador.
  */
-export async function claimAdminWithCodeAction(
-  code: string
-): Promise<AdminActionResponse<boolean>> {
+export async function requestAdminAccessAction(
+  reason?: string
+): Promise<AdminActionResponse<AdminRequestItem>> {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return {
-        success: false,
-        error: 'Debes iniciar sesión con tu cuenta antes de activar el código.',
-      };
+      return { success: false, error: 'Debes iniciar sesión con tu cuenta de Clerk.' };
     }
 
     const user = await currentUser();
@@ -212,33 +224,172 @@ export async function claimAdminWithCodeAction(
       user?.fullName ||
       (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null) ||
       userEmail?.split('@')[0] ||
-      'Administrador';
+      'Alumno';
 
     if (!userEmail) {
-      return { success: false, error: 'Tu cuenta de Clerk no tiene un email válido asociado.' };
+      return { success: false, error: 'Tu cuenta no tiene un correo electrónico válido asociado.' };
     }
 
-    const normalizedCode = code?.trim();
-    if (!normalizedCode || normalizedCode.toUpperCase() !== ADMIN_INVITE_CODE.toUpperCase()) {
-      return {
-        success: false,
-        error: 'Código de invitación incorrecto. Solicítalo al delegado o profesor.',
-      };
-    }
-
-    // Verificar si ya era admin
     const alreadyAdmin = await isUserAdmin(userEmail);
-    if (!alreadyAdmin) {
-      await prisma.appAdmin.upsert({
-        where: { email: userEmail },
-        update: {},
-        create: {
-          email: userEmail,
-          name: userName,
-          addedBy: 'Código de Invitación Directo',
-        },
-      });
+    if (alreadyAdmin) {
+      return { success: false, error: 'Ya tienes permisos de administrador activos.' };
     }
+
+    const sanitizedReason = reason?.trim().replace(/[<>]/g, '').slice(0, 250) || null;
+
+    const request = await prisma.adminRequest.upsert({
+      where: { userId },
+      update: {
+        userEmail,
+        userName,
+        reason: sanitizedReason,
+        status: 'pending',
+        reviewedBy: null,
+      },
+      create: {
+        userId,
+        userEmail,
+        userName,
+        reason: sanitizedReason,
+        status: 'pending',
+      },
+    });
+
+    revalidatePath('/admin');
+
+    return {
+      success: true,
+      data: {
+        id: request.id,
+        userId: request.userId,
+        userEmail: request.userEmail,
+        userName: request.userName,
+        reason: request.reason,
+        status: request.status,
+        reviewedBy: request.reviewedBy,
+        createdAt: request.createdAt.toISOString(),
+        updatedAt: request.updatedAt.toISOString(),
+      },
+      message: '¡Solicitud enviada! Un superadministrador revisará y aprobará tu acceso.',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al enviar la solicitud',
+    };
+  }
+}
+
+/**
+ * Consulta el estado de la solicitud de administrador del usuario autenticado actual.
+ */
+export async function getMyAdminRequestStatusAction(): Promise<
+  AdminActionResponse<AdminRequestItem | null>
+> {
+  try {
+    const { userId } = await auth();
+    if (!userId) return { success: true, data: null };
+
+    const req = await prisma.adminRequest.findUnique({
+      where: { userId },
+    });
+
+    if (!req) return { success: true, data: null };
+
+    return {
+      success: true,
+      data: {
+        id: req.id,
+        userId: req.userId,
+        userEmail: req.userEmail,
+        userName: req.userName,
+        reason: req.reason,
+        status: req.status,
+        reviewedBy: req.reviewedBy,
+        createdAt: req.createdAt.toISOString(),
+        updatedAt: req.updatedAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    return { success: false, error: 'Error al consultar estado de solicitud' };
+  }
+}
+
+/**
+ * Consulta la lista de solicitudes de acceso pendientes (Para Superadministradores y Administradores).
+ */
+export async function getPendingAdminRequestsAction(): Promise<
+  AdminActionResponse<AdminRequestItem[]>
+> {
+  try {
+    await verifyAdminAuth();
+    const requests = await prisma.adminRequest.findMany({
+      where: { status: 'pending' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      success: true,
+      data: requests.map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        userEmail: r.userEmail,
+        userName: r.userName,
+        reason: r.reason,
+        status: r.status,
+        reviewedBy: r.reviewedBy,
+        createdAt: r.createdAt.toISOString(),
+        updatedAt: r.updatedAt.toISOString(),
+      })),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al obtener solicitudes',
+    };
+  }
+}
+
+/**
+ * Acepta una solicitud de acceso dando de alta al usuario como Administrador (Solo Superadministradores).
+ */
+export async function approveAdminRequestAction(
+  requestId: string
+): Promise<AdminActionResponse<boolean>> {
+  try {
+    const { userEmail: superAdminEmail, userName: superAdminName } =
+      await verifySuperAdminAuth();
+
+    const request = await prisma.adminRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      return { success: false, error: 'Solicitud no encontrada.' };
+    }
+
+    // 1. Dar de alta en AppAdmin
+    await prisma.appAdmin.upsert({
+      where: { email: request.userEmail },
+      update: {
+        name: request.userName,
+      },
+      create: {
+        email: request.userEmail,
+        name: request.userName,
+        addedBy: `${superAdminName} (${superAdminEmail})`,
+        isSuper: false,
+      },
+    });
+
+    // 2. Marcar solicitud como aprobada
+    await prisma.adminRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'approved',
+        reviewedBy: superAdminEmail,
+      },
+    });
 
     revalidatePath('/admin');
     revalidatePath('/');
@@ -246,30 +397,73 @@ export async function claimAdminWithCodeAction(
     return {
       success: true,
       data: true,
-      message: '¡Permisos de administrador concedidos con éxito!',
+      message: `¡${request.userEmail} ha sido aceptado como Administrador!`,
     };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Error al procesar el código',
+      error: error instanceof Error ? error.message : 'Error al aprobar solicitud',
     };
   }
 }
 
 /**
- * Comprueba si el usuario autenticado actual tiene permisos de administrador.
+ * Rechaza una solicitud de acceso (Solo Superadministradores).
+ */
+export async function rejectAdminRequestAction(
+  requestId: string
+): Promise<AdminActionResponse<boolean>> {
+  try {
+    const { userEmail: superAdminEmail } = await verifySuperAdminAuth();
+
+    const request = await prisma.adminRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      return { success: false, error: 'Solicitud no encontrada.' };
+    }
+
+    await prisma.adminRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'rejected',
+        reviewedBy: superAdminEmail,
+      },
+    });
+
+    revalidatePath('/admin');
+
+    return {
+      success: true,
+      data: true,
+      message: `Solicitud de ${request.userEmail} rechazada.`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al rechazar solicitud',
+    };
+  }
+}
+
+/**
+ * Comprueba si el usuario autenticado actual tiene permisos de administrador y su rol superadmin.
  */
 export async function checkIsAdminAction(): Promise<{
   isAdmin: boolean;
+  isSuper: boolean;
   userEmail?: string;
 }> {
   try {
     const user = await currentUser();
     const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-    if (!email) return { isAdmin: false };
+    if (!email) return { isAdmin: false, isSuper: false };
     const isAdmin = await isUserAdmin(email);
-    return { isAdmin, userEmail: email };
+    const isSuper = isAdmin ? await isUserSuperAdmin(email) : false;
+    return { isAdmin, isSuper, userEmail: email };
   } catch {
-    return { isAdmin: false };
+    return { isAdmin: false, isSuper: false };
   }
 }
+

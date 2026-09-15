@@ -42,6 +42,9 @@ export default function RootLayout({
             position="top-right"
             richColors
             closeButton
+            visibleToasts={2}
+            duration={2200}
+            gap={8}
             toastOptions={{
               style: {
                 background: 'rgba(15, 23, 42, 0.95)',

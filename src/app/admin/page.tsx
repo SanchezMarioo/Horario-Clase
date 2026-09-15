@@ -6,9 +6,9 @@ import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import { readAbsences, calculateAbsenceStats } from '@/lib/absencesStore';
 import { getEventsAction } from '@/app/actions/calendar';
 import { getAdminsAction } from '@/app/actions/admins';
-import { isUserAdmin } from '@/lib/adminAuth';
+import { isUserAdmin, isUserSuperAdmin } from '@/lib/adminAuth';
 import AdminDashboard from '@/components/admin/AdminDashboard';
-import AdminClaimCard from '@/components/admin/AdminClaimCard';
+import AdminRequestCard from '@/components/admin/AdminRequestCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,11 +32,12 @@ export default async function AdminPage() {
   const isAdmin = await isUserAdmin(userEmail);
 
   if (!isAdmin) {
-    return <AdminClaimCard userEmail={userEmail} userId={userId} />;
+    return <AdminRequestCard userEmail={userEmail} userId={userId} />;
   }
 
+  const isSuper = await isUserSuperAdmin(userEmail);
   const initialRecords = await readAbsences();
-  const initialStats = await calculateAbsenceStats();
+  const initialStats = await calculateAbsenceStats(null, true);
   const eventsRes = await getEventsAction();
   const initialEvents = eventsRes.success && eventsRes.data ? eventsRes.data : [];
   const adminsRes = await getAdminsAction();
@@ -49,6 +50,7 @@ export default async function AdminPage() {
       initialEvents={initialEvents}
       initialAdmins={initialAdmins}
       userEmail={userEmail}
+      isSuperAdmin={isSuper}
     />
   );
 }

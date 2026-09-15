@@ -10,7 +10,7 @@ import {
   calculateAbsenceStats,
 } from '@/lib/absencesStore';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUserAuth, isUserAdmin } from '@/lib/adminAuth';
+import { getCurrentUserAuth, isUserAdmin, verifyAdminAuth } from '@/lib/adminAuth';
 import { AbsenceRecord, ModuleAbsenceStats } from '@/types/absence';
 
 // Esquema Zod para validación estricta en servidor
@@ -38,38 +38,7 @@ const createAbsenceSchema = z.object({
     .transform((val) => val?.trim().replace(/[<>]/g, '')), // Sanitización básica anti-XSS
 });
 
-/**
- * Función de seguridad para validar sesión y permisos de administrador en el servidor
- */
-async function verifyAdminAuth() {
-  const { userId } = await auth();
 
-  if (!userId) {
-    throw new Error('No autorizado: Debes iniciar sesión para realizar esta acción.');
-  }
-
-  // Si se ha configurado una lista blanca de administradores por email en variables de entorno
-  const adminEmailsEnv = process.env.ADMIN_EMAILS;
-  if (adminEmailsEnv && adminEmailsEnv.trim().length > 0) {
-    const adminEmails = adminEmailsEnv
-      .split(',')
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean);
-
-    if (adminEmails.length > 0) {
-      const user = await currentUser();
-      const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-
-      if (!userEmail || !adminEmails.includes(userEmail)) {
-        throw new Error(
-          `Acceso denegado: El usuario ${userEmail || userId} no tiene permisos de administrador.`
-        );
-      }
-    }
-  }
-
-  return userId;
-}
 
 export type ActionResponse<T> = {
   success: boolean;
@@ -153,19 +122,20 @@ export async function deleteAbsenceAction(id: string): Promise<ActionResponse<bo
   }
 }
 
-/**
- * Server action para obtener faltas completas y estadísticas (Protegido)
- */
-export async function getAdminDataAction(): Promise<
+export async function getAdminDataAction(
+  onlyMine = false
+): Promise<
   ActionResponse<{
     records: AbsenceRecord[];
     stats: ModuleAbsenceStats[];
   }>
 > {
   try {
-    await verifyAdminAuth();
-    const records = await readAbsences();
-    const stats = await calculateAbsenceStats();
+    const { userId } = await verifyAdminAuth();
+    const records = onlyMine ? await readAbsences(userId) : await readAbsences();
+    const stats = onlyMine
+      ? await calculateAbsenceStats(userId)
+      : await calculateAbsenceStats(null, true);
 
     return {
       success: true,
@@ -180,11 +150,33 @@ export async function getAdminDataAction(): Promise<
 }
 
 /**
- * Server action para obtener estadísticas agregadas públicas (Solo totales, sin notas privadas)
+ * Server action para obtener las faltas personales del usuario actual
+ */
+export async function getMyAbsencesAction(): Promise<ActionResponse<AbsenceRecord[]>> {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return { success: true, data: [] };
+    }
+    const records = await readAbsences(userId);
+    return { success: true, data: records };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al consultar faltas personales',
+    };
+  }
+}
+
+/**
+ * Server action para obtener estadísticas individuales del usuario actual (Límite 12% personal)
  */
 export async function getPublicStatsAction(): Promise<ActionResponse<ModuleAbsenceStats[]>> {
   try {
-    const stats = await calculateAbsenceStats();
+    const { userId } = await auth();
+    // Si el usuario está autenticado, calcula únicamente sus faltas personales
+    // Si no está autenticado, devuelve 0h consumidas (safe)
+    const stats = await calculateAbsenceStats(userId);
     return { success: true, data: stats };
   } catch (error) {
     return {
@@ -193,3 +185,4 @@ export async function getPublicStatsAction(): Promise<ActionResponse<ModuleAbsen
     };
   }
 }
+
