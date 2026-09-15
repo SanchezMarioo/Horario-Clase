@@ -533,13 +533,15 @@
   <!-- Filtros -->
   <nav class="controls" id="filterNav">
     <button class="filter-btn active" data-filter="all">Todas las asignaturas</button>
-    <button class="filter-btn" data-filter="sub-nube">☁️ Nube</button>
-    <button class="filter-btn" data-filter="sub-interfaces">💻 Interfaces</button>
-    <button class="filter-btn" data-filter="sub-datos">🗄️ Datos</button>
     <button class="filter-btn" data-filter="sub-multimedia">📱 Móviles</button>
+    <button class="filter-btn" data-filter="sub-datos">🗄️ Datos</button>
+    <button class="filter-btn" data-filter="sub-interfaces">💻 Interfaces</button>
     <button class="filter-btn" data-filter="sub-gestion">📊 SGE</button>
+    <button class="filter-btn" data-filter="sub-nube">☁️ Nube</button>
     <button class="filter-btn" data-filter="sub-servicios">⚡ Procesos</button>
     <button class="filter-btn" data-filter="sub-ipe">💼 Empleabilidad</button>
+    <button class="filter-btn" data-filter="sub-digitalizacion">🤖 Digitalización</button>
+    <button class="filter-btn" data-filter="sub-sostenibilidad">🌱 Sostenibilidad</button>
   </nav>
 
   <!-- Tabla Semanal con badges -->
@@ -573,9 +575,85 @@
               </div>
             </td>
             <td>
-              <div class="subject sub-datos" data-cat="sub-datos">
-                <span class="sub-title">Acceso a datos</span>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
                 <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- 09:20 - 10:10 -->
+          <tr>
+            <td><div class="time-slot">09:20 – 10:10 <span>2ª Hora</span></div></td>
+            <td>
+              <div class="subject sub-ipe" data-cat="sub-ipe">
+                <span class="sub-title">Itin. pers. empleab. II</span>
+                <span class="sub-badge">⚠️ Máx 8h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-interfaces" data-cat="sub-interfaces">
+                <span class="sub-title">Desarrollo de interfaces</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- RECREO 1 -->
+          <tr>
+            <td><div class="time-slot">10:10 – 10:35 <span>Pausa</span></div></td>
+            <td colspan="5"><div class="recreo-cell">☕ R E C R E O</div></td>
+          </tr>
+
+          <!-- 10:35 - 11:25 -->
+          <tr>
+            <td><div class="time-slot">10:35 – 11:25 <span>3ª Hora</span></div></td>
+            <td>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-nube" data-cat="sub-nube">
+                <span class="sub-title">Computación en la nube</span>
+                <span class="sub-badge">⚠️ Máx 6h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-ipe" data-cat="sub-ipe">
+                <span class="sub-title">Itin. pers. empleab. II</span>
+                <span class="sub-badge">⚠️ Máx 8h</span>
               </div>
             </td>
             <td>
@@ -592,101 +670,25 @@
             </td>
           </tr>
 
-          <!-- 09:20 - 10:10 -->
-          <tr>
-            <td><div class="time-slot">09:20 – 10:10 <span>2ª Hora</span></div></td>
-            <td>
-              <div class="subject sub-nube" data-cat="sub-nube">
-                <span class="sub-title">Computación en la nube</span>
-                <span class="sub-badge">⚠️ Máx 6h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-multimedia" data-cat="sub-multimedia">
-                <span class="sub-title">Progr. Multim. y Móviles</span>
-                <span class="sub-badge">⚠️ Máx 24h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-datos" data-cat="sub-datos">
-                <span class="sub-title">Acceso a datos</span>
-                <span class="sub-badge">⚠️ Máx 20h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-ipe" data-cat="sub-ipe">
-                <span class="sub-title">Itin. pers. empleab. II</span>
-                <span class="sub-badge">⚠️ Máx 8h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-multimedia" data-cat="sub-multimedia">
-                <span class="sub-title">Progr. Multim. y Móviles</span>
-                <span class="sub-badge">⚠️ Máx 24h</span>
-              </div>
-            </td>
-          </tr>
-
-          <!-- RECREO 1 -->
-          <tr>
-            <td><div class="time-slot">10:10 – 10:35 <span>Pausa</span></div></td>
-            <td colspan="5"><div class="recreo-cell">☕ R E C R E O</div></td>
-          </tr>
-
-          <!-- 10:35 - 11:25 -->
-          <tr>
-            <td><div class="time-slot">10:35 – 11:25 <span>3ª Hora</span></div></td>
-            <td>
-              <div class="subject sub-interfaces" data-cat="sub-interfaces">
-                <span class="sub-title">Desarrollo de interfaces</span>
-                <span class="sub-badge">⚠️ Máx 20h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-multimedia" data-cat="sub-multimedia">
-                <span class="sub-title">Progr. Multim. y Móviles</span>
-                <span class="sub-badge">⚠️ Máx 24h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-servicios" data-cat="sub-servicios">
-                <span class="sub-title">Program. Serv. y Procesos</span>
-                <span class="sub-badge">⚠️ Máx 8h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-datos" data-cat="sub-datos">
-                <span class="sub-title">Acceso a datos</span>
-                <span class="sub-badge">⚠️ Máx 20h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-nube" data-cat="sub-nube">
-                <span class="sub-title">Computación en la nube</span>
-                <span class="sub-badge">⚠️ Máx 6h</span>
-              </div>
-            </td>
-          </tr>
-
           <!-- 11:25 - 12:15 -->
           <tr>
             <td><div class="time-slot">11:25 – 12:15 <span>4ª Hora</span></div></td>
             <td>
+              <div class="subject sub-datos" data-cat="sub-datos">
+                <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-nube" data-cat="sub-nube">
+                <span class="sub-title">Computación en la nube</span>
+                <span class="sub-badge">⚠️ Máx 6h</span>
+              </div>
+            </td>
+            <td>
               <div class="subject sub-interfaces" data-cat="sub-interfaces">
                 <span class="sub-title">Desarrollo de interfaces</span>
                 <span class="sub-badge">⚠️ Máx 20h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-gestion" data-cat="sub-gestion">
-                <span class="sub-title">Sis. Ges. Empresarial</span>
-                <span class="sub-badge">⚠️ Máx 20h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-servicios" data-cat="sub-servicios">
-                <span class="sub-title">Program. Serv. y Procesos</span>
-                <span class="sub-badge">⚠️ Máx 8h</span>
               </div>
             </td>
             <td>
@@ -696,9 +698,9 @@
               </div>
             </td>
             <td>
-              <div class="subject sub-gestion" data-cat="sub-gestion">
-                <span class="sub-title">Sis. Ges. Empresarial</span>
-                <span class="sub-badge">⚠️ Máx 20h</span>
+              <div class="subject sub-multimedia" data-cat="sub-multimedia">
+                <span class="sub-title">Progr. Multim. y Móviles</span>
+                <span class="sub-badge">⚠️ Máx 24h</span>
               </div>
             </td>
           </tr>
@@ -713,9 +715,9 @@
           <tr>
             <td><div class="time-slot">12:40 – 13:30 <span>5ª Hora</span></div></td>
             <td>
-              <div class="subject sub-ipe" data-cat="sub-ipe">
-                <span class="sub-title">Itin. pers. empleab. II</span>
-                <span class="sub-badge">⚠️ Máx 8h</span>
+              <div class="subject sub-datos" data-cat="sub-datos">
+                <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
               </div>
             </td>
             <td>
@@ -725,20 +727,20 @@
               </div>
             </td>
             <td>
-              <div class="subject sub-multimedia" data-cat="sub-multimedia">
-                <span class="sub-title">Progr. Multim. y Móviles</span>
-                <span class="sub-badge">⚠️ Máx 24h</span>
+              <div class="subject sub-datos" data-cat="sub-datos">
+                <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-servicios" data-cat="sub-servicios">
+                <span class="sub-title">Program. Serv. y Procesos</span>
+                <span class="sub-badge">⚠️ Máx 8h</span>
               </div>
             </td>
             <td>
               <div class="subject sub-interfaces" data-cat="sub-interfaces">
                 <span class="sub-title">Desarrollo de interfaces</span>
-                <span class="sub-badge">⚠️ Máx 20h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-gestion" data-cat="sub-gestion">
-                <span class="sub-title">Sis. Ges. Empresarial</span>
                 <span class="sub-badge">⚠️ Máx 20h</span>
               </div>
             </td>
@@ -748,32 +750,32 @@
           <tr>
             <td><div class="time-slot">13:30 – 14:20 <span>6ª Hora</span></div></td>
             <td>
-              <div class="subject sub-gestion" data-cat="sub-gestion">
-                <span class="sub-title">Sis. Ges. Empresarial</span>
-                <span class="sub-badge">⚠️ Máx 20h</span>
-              </div>
-            </td>
-            <td>
               <div class="subject sub-sostenibilidad" data-cat="sub-sostenibilidad">
                 <span class="sub-title">Sostenib. apl. sist. prod.</span>
                 <span class="sub-badge">⚠️ Máx 4h</span>
               </div>
             </td>
             <td>
-              <div class="subject sub-multimedia" data-cat="sub-multimedia">
-                <span class="sub-title">Progr. Multim. y Móviles</span>
-                <span class="sub-badge">⚠️ Máx 24h</span>
-              </div>
-            </td>
-            <td>
-              <div class="subject sub-interfaces" data-cat="sub-interfaces">
-                <span class="sub-title">Desarrollo de interfaces</span>
+              <div class="subject sub-gestion" data-cat="sub-gestion">
+                <span class="sub-title">Sis. Ges. Empresarial</span>
                 <span class="sub-badge">⚠️ Máx 20h</span>
               </div>
             </td>
             <td>
               <div class="subject sub-datos" data-cat="sub-datos">
                 <span class="sub-title">Acceso a datos</span>
+                <span class="sub-badge">⚠️ Máx 20h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-servicios" data-cat="sub-servicios">
+                <span class="sub-title">Program. Serv. y Procesos</span>
+                <span class="sub-badge">⚠️ Máx 8h</span>
+              </div>
+            </td>
+            <td>
+              <div class="subject sub-interfaces" data-cat="sub-interfaces">
+                <span class="sub-title">Desarrollo de interfaces</span>
                 <span class="sub-badge">⚠️ Máx 20h</span>
               </div>
             </td>

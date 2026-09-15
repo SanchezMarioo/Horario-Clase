@@ -200,19 +200,19 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
         badge: '⚠️ Máx 20h',
       },
       wednesday: {
-        subjectId: 'sub-datos',
-        title: 'Acceso a datos',
-        badge: '⚠️ Máx 20h',
-      },
-      thursday: {
-        subjectId: 'sub-digitalizacion',
-        title: 'Dig. apl. sec. prod.',
-        badge: '⚠️ Máx 4h',
-      },
-      friday: {
         subjectId: 'sub-multimedia',
         title: 'Progr. Multim. y Móviles',
         badge: '⚠️ Máx 24h',
+      },
+      thursday: {
+        subjectId: 'sub-multimedia',
+        title: 'Progr. Multim. y Móviles',
+        badge: '⚠️ Máx 24h',
+      },
+      friday: {
+        subjectId: 'sub-gestion',
+        title: 'Sis. Ges. Empresarial',
+        badge: '⚠️ Máx 20h',
       },
     },
   },
@@ -223,29 +223,29 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
     period: '2ª Hora',
     classes: {
       monday: {
-        subjectId: 'sub-nube',
-        title: 'Computación en la nube',
-        badge: '⚠️ Máx 6h',
-      },
-      tuesday: {
-        subjectId: 'sub-multimedia',
-        title: 'Progr. Multim. y Móviles',
-        badge: '⚠️ Máx 24h',
-      },
-      wednesday: {
-        subjectId: 'sub-datos',
-        title: 'Acceso a datos',
-        badge: '⚠️ Máx 20h',
-      },
-      thursday: {
         subjectId: 'sub-ipe',
         title: 'Itin. pers. empleab. II',
         badge: '⚠️ Máx 8h',
       },
-      friday: {
+      tuesday: {
+        subjectId: 'sub-interfaces',
+        title: 'Desarrollo de interfaces',
+        badge: '⚠️ Máx 20h',
+      },
+      wednesday: {
         subjectId: 'sub-multimedia',
         title: 'Progr. Multim. y Móviles',
         badge: '⚠️ Máx 24h',
+      },
+      thursday: {
+        subjectId: 'sub-multimedia',
+        title: 'Progr. Multim. y Móviles',
+        badge: '⚠️ Máx 24h',
+      },
+      friday: {
+        subjectId: 'sub-gestion',
+        title: 'Sis. Ges. Empresarial',
+        badge: '⚠️ Máx 20h',
       },
     },
   },
@@ -264,29 +264,29 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
     period: '3ª Hora',
     classes: {
       monday: {
-        subjectId: 'sub-interfaces',
-        title: 'Desarrollo de interfaces',
+        subjectId: 'sub-gestion',
+        title: 'Sis. Ges. Empresarial',
         badge: '⚠️ Máx 20h',
       },
       tuesday: {
-        subjectId: 'sub-multimedia',
-        title: 'Progr. Multim. y Móviles',
-        badge: '⚠️ Máx 24h',
-      },
-      wednesday: {
-        subjectId: 'sub-servicios',
-        title: 'Program. Serv. y Procesos',
-        badge: '⚠️ Máx 8h',
-      },
-      thursday: {
-        subjectId: 'sub-datos',
-        title: 'Acceso a datos',
-        badge: '⚠️ Máx 20h',
-      },
-      friday: {
         subjectId: 'sub-nube',
         title: 'Computación en la nube',
         badge: '⚠️ Máx 6h',
+      },
+      wednesday: {
+        subjectId: 'sub-ipe',
+        title: 'Itin. pers. empleab. II',
+        badge: '⚠️ Máx 8h',
+      },
+      thursday: {
+        subjectId: 'sub-digitalizacion',
+        title: 'Dig. apl. sec. prod.',
+        badge: '⚠️ Máx 4h',
+      },
+      friday: {
+        subjectId: 'sub-multimedia',
+        title: 'Progr. Multim. y Móviles',
+        badge: '⚠️ Máx 24h',
       },
     },
   },
@@ -297,19 +297,19 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
     period: '4ª Hora',
     classes: {
       monday: {
-        subjectId: 'sub-interfaces',
-        title: 'Desarrollo de interfaces',
+        subjectId: 'sub-datos',
+        title: 'Acceso a datos',
         badge: '⚠️ Máx 20h',
       },
       tuesday: {
-        subjectId: 'sub-gestion',
-        title: 'Sis. Ges. Empresarial',
-        badge: '⚠️ Máx 20h',
+        subjectId: 'sub-nube',
+        title: 'Computación en la nube',
+        badge: '⚠️ Máx 6h',
       },
       wednesday: {
-        subjectId: 'sub-servicios',
-        title: 'Program. Serv. y Procesos',
-        badge: '⚠️ Máx 8h',
+        subjectId: 'sub-interfaces',
+        title: 'Desarrollo de interfaces',
+        badge: '⚠️ Máx 20h',
       },
       thursday: {
         subjectId: 'sub-datos',
@@ -317,9 +317,9 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
         badge: '⚠️ Máx 20h',
       },
       friday: {
-        subjectId: 'sub-gestion',
-        title: 'Sis. Ges. Empresarial',
-        badge: '⚠️ Máx 20h',
+        subjectId: 'sub-multimedia',
+        title: 'Progr. Multim. y Móviles',
+        badge: '⚠️ Máx 24h',
       },
     },
   },
@@ -338,9 +338,9 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
     period: '5ª Hora',
     classes: {
       monday: {
-        subjectId: 'sub-ipe',
-        title: 'Itin. pers. empleab. II',
-        badge: '⚠️ Máx 8h',
+        subjectId: 'sub-datos',
+        title: 'Acceso a datos',
+        badge: '⚠️ Máx 20h',
       },
       tuesday: {
         subjectId: 'sub-gestion',
@@ -348,18 +348,18 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
         badge: '⚠️ Máx 20h',
       },
       wednesday: {
-        subjectId: 'sub-multimedia',
-        title: 'Progr. Multim. y Móviles',
-        badge: '⚠️ Máx 24h',
-      },
-      thursday: {
-        subjectId: 'sub-interfaces',
-        title: 'Desarrollo de interfaces',
+        subjectId: 'sub-datos',
+        title: 'Acceso a datos',
         badge: '⚠️ Máx 20h',
       },
+      thursday: {
+        subjectId: 'sub-servicios',
+        title: 'Program. Serv. y Procesos',
+        badge: '⚠️ Máx 8h',
+      },
       friday: {
-        subjectId: 'sub-gestion',
-        title: 'Sis. Ges. Empresarial',
+        subjectId: 'sub-interfaces',
+        title: 'Desarrollo de interfaces',
         badge: '⚠️ Máx 20h',
       },
     },
@@ -371,28 +371,28 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
     period: '6ª Hora',
     classes: {
       monday: {
-        subjectId: 'sub-gestion',
-        title: 'Sis. Ges. Empresarial',
-        badge: '⚠️ Máx 20h',
-      },
-      tuesday: {
         subjectId: 'sub-sostenibilidad',
         title: 'Sostenib. apl. sist. prod.',
         badge: '⚠️ Máx 4h',
       },
-      wednesday: {
-        subjectId: 'sub-multimedia',
-        title: 'Progr. Multim. y Móviles',
-        badge: '⚠️ Máx 24h',
-      },
-      thursday: {
-        subjectId: 'sub-interfaces',
-        title: 'Desarrollo de interfaces',
+      tuesday: {
+        subjectId: 'sub-gestion',
+        title: 'Sis. Ges. Empresarial',
         badge: '⚠️ Máx 20h',
       },
-      friday: {
+      wednesday: {
         subjectId: 'sub-datos',
         title: 'Acceso a datos',
+        badge: '⚠️ Máx 20h',
+      },
+      thursday: {
+        subjectId: 'sub-servicios',
+        title: 'Program. Serv. y Procesos',
+        badge: '⚠️ Máx 8h',
+      },
+      friday: {
+        subjectId: 'sub-interfaces',
+        title: 'Desarrollo de interfaces',
         badge: '⚠️ Máx 20h',
       },
     },
@@ -401,11 +401,13 @@ export const SCHEDULE_TIME_SLOTS: TimeSlot[] = [
 
 export const FILTER_ITEMS: FilterItem[] = [
   { id: 'all', label: 'Todas las asignaturas' },
-  { id: 'sub-nube', label: '☁️ Nube' },
-  { id: 'sub-interfaces', label: '💻 Interfaces' },
-  { id: 'sub-datos', label: '🗄️ Datos' },
   { id: 'sub-multimedia', label: '📱 Móviles' },
+  { id: 'sub-datos', label: '🗄️ Datos' },
+  { id: 'sub-interfaces', label: '💻 Interfaces' },
   { id: 'sub-gestion', label: '📊 SGE' },
+  { id: 'sub-nube', label: '☁️ Nube' },
   { id: 'sub-servicios', label: '⚡ Procesos' },
   { id: 'sub-ipe', label: '💼 Empleabilidad' },
+  { id: 'sub-digitalizacion', label: '🤖 Digitalización' },
+  { id: 'sub-sostenibilidad', label: '🌱 Sostenibilidad' },
 ];
