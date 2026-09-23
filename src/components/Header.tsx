@@ -3,33 +3,51 @@
 import React from 'react';
 import Link from 'next/link';
 import { useAuth, UserButton } from '@clerk/nextjs';
-import { ShieldCheck, LogIn } from 'lucide-react';
+import { ShieldCheck, LogIn, ClipboardList } from 'lucide-react';
 
-export default function Header() {
+interface HeaderProps {
+  isAdmin?: boolean;
+  onOpenMyAbsences?: () => void;
+}
+
+export default function Header({ isAdmin = false, onOpenMyAbsences }: HeaderProps) {
   const { isSignedIn, isLoaded } = useAuth();
 
   return (
     <header className="text-center max-w-4xl mb-6 relative w-full flex flex-col items-center">
-      {/* Botón de acceso de administración en esquina superior */}
+      {/* Botones de acceso de usuario en esquina superior */}
       <div className="flex items-center gap-2 mb-4 self-end min-h-[36px]">
         {isLoaded && isSignedIn ? (
           <div className="flex items-center gap-2">
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 hover:text-white text-xs font-semibold transition-all backdrop-blur-sm shadow-sm"
-            >
-              <ShieldCheck size={14} />
-              Panel Admin
-            </Link>
+            {isAdmin ? (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 hover:text-white text-xs font-semibold transition-all backdrop-blur-sm shadow-sm"
+              >
+                <ShieldCheck size={14} />
+                Panel Admin
+              </Link>
+            ) : (
+              onOpenMyAbsences && (
+                <button
+                  type="button"
+                  onClick={onOpenMyAbsences}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 hover:text-white text-xs font-semibold transition-all backdrop-blur-sm shadow-sm cursor-pointer"
+                >
+                  <ClipboardList size={14} />
+                  Mis Faltas
+                </button>
+              )
+            )}
             <UserButton />
           </div>
         ) : (
           <Link
-            href="/admin"
+            href="/sign-in"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.08] text-xs font-semibold transition-all backdrop-blur-sm"
           >
             <LogIn size={14} />
-            Acceso Admin
+            Iniciar Sesión
           </Link>
         )}
       </div>

@@ -12,11 +12,23 @@ interface AddAbsenceFormProps {
     hours: number;
     justified: boolean;
     notes?: string;
+    targetUser?: {
+      userId?: string;
+      userName?: string;
+      userEmail?: string;
+    };
   }) => Promise<boolean>;
   isPending: boolean;
+  studentsList?: { userId: string; userName: string; userEmail: string }[];
+  currentStudentKey?: string;
 }
 
-export default function AddAbsenceForm({ onAddAbsence, isPending }: AddAbsenceFormProps) {
+export default function AddAbsenceForm({
+  onAddAbsence,
+  isPending,
+  studentsList = [],
+  currentStudentKey,
+}: AddAbsenceFormProps) {
   const getTodayStr = () => {
     const now = new Date();
     const y = now.getFullYear();
@@ -30,15 +42,39 @@ export default function AddAbsenceForm({ onAddAbsence, isPending }: AddAbsenceFo
   const [hours, setHours] = useState<number>(1);
   const [justified, setJustified] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>('');
+  const [targetStudentId, setTargetStudentId] = useState<string>(
+    currentStudentKey && currentStudentKey !== 'all' ? currentStudentKey : 'me'
+  );
+
+  // Sincronizar si cambia el alumno seleccionado desde el exterior
+  React.useEffect(() => {
+    if (currentStudentKey && currentStudentKey !== 'all') {
+      setTargetStudentId(currentStudentKey);
+    }
+  }, [currentStudentKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    let targetUser: { userId?: string; userName?: string; userEmail?: string } | undefined = undefined;
+    if (targetStudentId !== 'me') {
+      const found = studentsList.find((s) => s.userId === targetStudentId || s.userEmail === targetStudentId);
+      if (found) {
+        targetUser = {
+          userId: found.userId,
+          userName: found.userName,
+          userEmail: found.userEmail,
+        };
+      }
+    }
+
     const success = await onAddAbsence({
       subjectId,
       date,
       hours: Number(hours),
       justified,
       notes: notes.trim() ? notes.trim() : undefined,
+      targetUser,
     });
 
     if (success) {
@@ -54,6 +90,25 @@ export default function AddAbsenceForm({ onAddAbsence, isPending }: AddAbsenceFo
       </h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {studentsList.length > 0 && (
+          <div>
+            <label className="text-xs font-semibold text-slate-400 block mb-1.5">
+              Asignar Falta a:
+            </label>
+            <select
+              value={targetStudentId}
+              onChange={(e) => setTargetStudentId(e.target.value)}
+              className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+            >
+              <option value="me">Para mí (Mi cuenta personal)</option>
+              {studentsList.map((s) => (
+                <option key={s.userId} value={s.userId} className="bg-slate-900 text-white">
+                  {s.userName} ({s.userEmail})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label className="text-xs font-semibold text-slate-400 block mb-1.5">
             Módulo / Asignatura

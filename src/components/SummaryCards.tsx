@@ -1,8 +1,10 @@
 import React, { useState, memo } from 'react';
 import { SubjectModule, SubjectId } from '@/types/schedule';
 import { ModuleAbsenceStats } from '@/types/absence';
-import { Plus } from 'lucide-react';
+import { Plus, ClipboardList } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
 import AddAbsenceModal from '@/components/absences/AddAbsenceModal';
+import MyAbsencesModal from '@/components/absences/MyAbsencesModal';
 
 interface SummaryCardsProps {
   modules: SubjectModule[];
@@ -10,6 +12,8 @@ interface SummaryCardsProps {
   onSelectCategory: (categoryId: 'all' | SubjectId) => void;
   absenceStats?: Record<SubjectId, ModuleAbsenceStats>;
   onRefresh?: () => void;
+  isMyAbsencesOpenExternal?: boolean;
+  onCloseMyAbsencesExternal?: () => void;
 }
 
 function SummaryCardsComponent({
@@ -18,22 +22,58 @@ function SummaryCardsComponent({
   onSelectCategory,
   absenceStats,
   onRefresh,
+  isMyAbsencesOpenExternal,
+  onCloseMyAbsencesExternal,
 }: SummaryCardsProps) {
+  const { isSignedIn } = useAuth();
   const [isAbsenceModalOpen, setIsAbsenceModalOpen] = useState(false);
+  const [isMyAbsencesModalOpen, setIsMyAbsencesModalOpen] = useState(false);
+
+  const effectiveMyAbsencesOpen =
+    isMyAbsencesOpenExternal !== undefined
+      ? isMyAbsencesOpenExternal
+      : isMyAbsencesModalOpen;
+
+  const handleCloseMyAbsences = () => {
+    setIsMyAbsencesModalOpen(false);
+    if (onCloseMyAbsencesExternal) onCloseMyAbsencesExternal();
+  };
+
+  const totalPersonalHours = absenceStats
+    ? Object.values(absenceStats).reduce((sum, s) => sum + s.totalAbsenceHours, 0)
+    : 0;
 
   return (
     <section className="w-full max-w-[1240px] mb-6">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-          <span>⚠️</span> Límite de Faltas por Módulo (12% Currículo)
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+            <span>⚠️</span> Límite Individual de Faltas por Módulo (12% Currículo)
+          </div>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            {isSignedIn
+              ? 'Tus ausencias registradas son personales e intransferibles.'
+              : 'Inicia sesión para calcular y registrar tu propio control de faltas.'}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {absenceStats && (
-            <span className="text-[11px] text-indigo-300 font-medium hidden sm:inline">
-              Sincronizado con base de datos
-            </span>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {isSignedIn && (
+            <button
+              type="button"
+              onClick={() => setIsMyAbsencesModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-xs font-bold transition-all cursor-pointer shadow-sm"
+            >
+              <ClipboardList size={14} />
+              <span>Mis Faltas</span>
+              {totalPersonalHours > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-md bg-indigo-500/30 text-white text-[10px]">
+                  {Number(totalPersonalHours.toFixed(1))}h
+                </span>
+              )}
+            </button>
           )}
+
           <button
             type="button"
             onClick={() => setIsAbsenceModalOpen(true)}
@@ -48,6 +88,13 @@ function SummaryCardsComponent({
         isOpen={isAbsenceModalOpen}
         onClose={() => setIsAbsenceModalOpen(false)}
         onAbsenceAdded={onRefresh}
+      />
+
+      <MyAbsencesModal
+        isOpen={effectiveMyAbsencesOpen}
+        onClose={handleCloseMyAbsences}
+        onOpenAddModal={() => setIsAbsenceModalOpen(true)}
+        onAbsenceDeleted={onRefresh}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

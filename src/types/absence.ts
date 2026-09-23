@@ -27,3 +27,17 @@ export interface ModuleAbsenceStats {
   percentageUsed: number;
   status: 'safe' | 'warning' | 'danger'; // safe < 50%, warning 50-80%, danger > 80%
 }
+
+export interface StudentAbsenceSummary {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  totalHours: number;
+  justifiedHours: number;
+  unjustifiedHours: number;
+  riskCount: number;
+  alertCount: number;
+  totalRecords: number;
+  stats: ModuleAbsenceStats[];
+}
+

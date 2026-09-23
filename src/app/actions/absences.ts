@@ -1,6 +1,6 @@
 'use server';
 
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import {
@@ -8,10 +8,15 @@ import {
   deleteAbsenceById,
   readAbsences,
   calculateAbsenceStats,
+  getStudentSummaries,
 } from '@/lib/absencesStore';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUserAuth, isUserAdmin, verifyAdminAuth } from '@/lib/adminAuth';
-import { AbsenceRecord, ModuleAbsenceStats } from '@/types/absence';
+import {
+  AbsenceRecord,
+  ModuleAbsenceStats,
+  StudentAbsenceSummary,
+} from '@/types/absence';
 
 // Esquema Zod para validación estricta en servidor
 const createAbsenceSchema = z.object({
@@ -38,8 +43,6 @@ const createAbsenceSchema = z.object({
     .transform((val) => val?.trim().replace(/[<>]/g, '')), // Sanitización básica anti-XSS
 });
 
-
-
 export type ActionResponse<T> = {
   success: boolean;
   data?: T;
@@ -47,20 +50,37 @@ export type ActionResponse<T> = {
 };
 
 /**
- * Server action para registrar una falta (Accesible para cualquier estudiante/usuario autenticado)
+ * Server action para registrar una falta.
+ * Si es admin y envía targetUser, puede registrar la falta para un alumno concreto.
+ * Si es alumno normal, se registra forzosamente para sí mismo.
  */
 export async function addAbsenceAction(
-  formData: unknown
+  formData: unknown,
+  targetUser?: {
+    userId?: string;
+    userName?: string;
+    userEmail?: string;
+  }
 ): Promise<ActionResponse<AbsenceRecord>> {
   try {
-    const { userId, userName, userEmail } = await getCurrentUserAuth();
+    const { userId, userName, userEmail, isAdmin } = await getCurrentUserAuth();
     const validatedData = createAbsenceSchema.parse(formData);
+
+    let finalUserId = userId;
+    let finalUserName = userName;
+    let finalUserEmail = userEmail;
+
+    if (isAdmin && targetUser && (targetUser.userId || targetUser.userEmail)) {
+      finalUserId = targetUser.userId || userId;
+      finalUserName = targetUser.userName || userName;
+      finalUserEmail = targetUser.userEmail || userEmail;
+    }
 
     const record = await createAbsence(
       validatedData,
-      userId,
-      userName,
-      userEmail
+      finalUserId,
+      finalUserName,
+      finalUserEmail
     );
 
     revalidatePath('/admin');
@@ -122,24 +142,44 @@ export async function deleteAbsenceAction(id: string): Promise<ActionResponse<bo
   }
 }
 
+/**
+ * Server action para obtener datos del panel de administración organizados por alumno.
+ */
 export async function getAdminDataAction(
-  onlyMine = false
+  targetUserId?: string | null
 ): Promise<
   ActionResponse<{
     records: AbsenceRecord[];
     stats: ModuleAbsenceStats[];
+    summaries: StudentAbsenceSummary[];
+    selectedUserId: string | null;
   }>
 > {
   try {
-    const { userId } = await verifyAdminAuth();
-    const records = onlyMine ? await readAbsences(userId) : await readAbsences();
-    const stats = onlyMine
-      ? await calculateAbsenceStats(userId)
-      : await calculateAbsenceStats(null, true);
+    const { userId: adminUserId } = await verifyAdminAuth();
+    const summaries = await getStudentSummaries();
+
+    let selectedUserId: string | null = targetUserId ?? null;
+    let records: AbsenceRecord[] = [];
+    let stats: ModuleAbsenceStats[] = [];
+
+    if (!selectedUserId || selectedUserId === 'all') {
+      records = await readAbsences();
+      // Si no hay alumno seleccionado, las estadísticas de módulo son las personales del admin
+      stats = await calculateAbsenceStats(adminUserId);
+    } else {
+      records = await readAbsences(selectedUserId);
+      stats = await calculateAbsenceStats(selectedUserId);
+    }
 
     return {
       success: true,
-      data: { records, stats },
+      data: {
+        records,
+        stats,
+        summaries,
+        selectedUserId,
+      },
     };
   } catch (error) {
     return {
@@ -150,16 +190,67 @@ export async function getAdminDataAction(
 }
 
 /**
- * Server action para obtener las faltas personales del usuario actual
+ * Server action para consultar los resúmenes consolidados de todos los alumnos (Solo Admin)
  */
-export async function getMyAbsencesAction(): Promise<ActionResponse<AbsenceRecord[]>> {
+export async function getStudentSummariesAction(): Promise<
+  ActionResponse<StudentAbsenceSummary[]>
+> {
+  try {
+    await verifyAdminAuth();
+    const summaries = await getStudentSummaries();
+    return { success: true, data: summaries };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al consultar resúmenes de alumnos',
+    };
+  }
+}
+
+/**
+ * Server action para obtener las faltas personales del usuario actual junto con sus estadísticas
+ */
+export async function getMyAbsencesAction(): Promise<
+  ActionResponse<{
+    records: AbsenceRecord[];
+    stats: ModuleAbsenceStats[];
+    totalHours: number;
+    justifiedHours: number;
+    unjustifiedHours: number;
+  }>
+> {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return { success: true, data: [] };
+      return {
+        success: true,
+        data: {
+          records: [],
+          stats: await calculateAbsenceStats(null),
+          totalHours: 0,
+          justifiedHours: 0,
+          unjustifiedHours: 0,
+        },
+      };
     }
     const records = await readAbsences(userId);
-    return { success: true, data: records };
+    const stats = await calculateAbsenceStats(userId);
+    const totalHours = Number(records.reduce((sum, r) => sum + r.hours, 0).toFixed(2));
+    const justifiedHours = Number(
+      records.filter((r) => r.justified).reduce((sum, r) => sum + r.hours, 0).toFixed(2)
+    );
+    const unjustifiedHours = Number((totalHours - justifiedHours).toFixed(2));
+
+    return {
+      success: true,
+      data: {
+        records,
+        stats,
+        totalHours,
+        justifiedHours,
+        unjustifiedHours,
+      },
+    };
   } catch (error) {
     return {
       success: false,
@@ -185,4 +276,5 @@ export async function getPublicStatsAction(): Promise<ActionResponse<ModuleAbsen
     };
   }
 }
+
 

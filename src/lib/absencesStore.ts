@@ -1,5 +1,10 @@
 import { prisma } from './prisma';
-import { AbsenceRecord, CreateAbsenceInput, ModuleAbsenceStats } from '@/types/absence';
+import {
+  AbsenceRecord,
+  CreateAbsenceInput,
+  ModuleAbsenceStats,
+  StudentAbsenceSummary,
+} from '@/types/absence';
 import { SUBJECT_MODULES } from '@/data/scheduleData';
 import { SubjectId } from '@/types/schedule';
 import { calculateModuleStatsFromRecords } from './absenceStats';
@@ -99,3 +104,61 @@ export async function calculateAbsenceStats(
 
   return calculateModuleStatsFromRecords(records);
 }
+
+/**
+ * Agrupa las faltas por cada alumno individual y calcula de manera independiente
+ * sus estadísticas individuales frente al límite del 12%.
+ */
+export async function getStudentSummaries(): Promise<StudentAbsenceSummary[]> {
+  try {
+    const allRecords = await readAbsences();
+    const studentMap = new Map<string, AbsenceRecord[]>();
+
+    for (const record of allRecords) {
+      const studentKey = record.createdBy || record.createdByEmail || 'anonimo';
+      if (!studentMap.has(studentKey)) {
+        studentMap.set(studentKey, []);
+      }
+      studentMap.get(studentKey)!.push(record);
+    }
+
+    const summaries: StudentAbsenceSummary[] = [];
+
+    for (const [key, studentRecords] of studentMap.entries()) {
+      const first = studentRecords[0];
+      const stats = calculateModuleStatsFromRecords(studentRecords);
+      const totalHours = Number(
+        studentRecords.reduce((sum, r) => sum + r.hours, 0).toFixed(2)
+      );
+      const justifiedHours = Number(
+        studentRecords
+          .filter((r) => r.justified)
+          .reduce((sum, r) => sum + r.hours, 0)
+          .toFixed(2)
+      );
+      const unjustifiedHours = Number((totalHours - justifiedHours).toFixed(2));
+      const riskCount = stats.filter((s) => s.status === 'danger').length;
+      const alertCount = stats.filter((s) => s.status === 'warning').length;
+
+      summaries.push({
+        userId: first.createdBy || key,
+        userName: first.createdByName || 'Estudiante',
+        userEmail: first.createdByEmail || '',
+        totalHours,
+        justifiedHours,
+        unjustifiedHours,
+        riskCount,
+        alertCount,
+        totalRecords: studentRecords.length,
+        stats,
+      });
+    }
+
+    // Ordenar de mayor a menor número de faltas para priorizar alertas
+    return summaries.sort((a, b) => b.totalHours - a.totalHours);
+  } catch (error) {
+    console.error('Error computing student summaries:', error);
+    return [];
+  }
+}
+

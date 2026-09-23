@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { readAbsences, calculateAbsenceStats } from '@/lib/absencesStore';
+import { readAbsences, calculateAbsenceStats, getStudentSummaries } from '@/lib/absencesStore';
 import { getEventsAction } from '@/app/actions/calendar';
 import { getAdminsAction } from '@/app/actions/admins';
 import { isUserAdmin, isUserSuperAdmin } from '@/lib/adminAuth';
@@ -36,7 +36,8 @@ export default async function AdminPage() {
 
   const isSuper = await isUserSuperAdmin(userEmail);
   const initialRecords = await readAbsences();
-  const initialStats = await calculateAbsenceStats(null, true);
+  const initialSummaries = await getStudentSummaries();
+  const initialStats = await calculateAbsenceStats(userId);
   const eventsRes = await getEventsAction();
   const initialEvents = eventsRes.success && eventsRes.data ? eventsRes.data : [];
   const adminsRes = await getAdminsAction();
@@ -46,9 +47,11 @@ export default async function AdminPage() {
     <AdminDashboard
       initialRecords={initialRecords}
       initialStats={initialStats}
+      initialSummaries={initialSummaries}
       initialEvents={initialEvents}
       initialAdmins={initialAdmins}
       userEmail={userEmail}
+      adminUserId={userId}
       isSuperAdmin={isSuper}
     />
   );

@@ -20,8 +20,10 @@ import { getPublicStatsAction } from '@/app/actions/absences';
 import { getEventsAction, getUpcomingEventsAction } from '@/app/actions/calendar';
 import { checkIsAdminAction } from '@/app/actions/admins';
 import { Calendar, Table2 } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
 
 export default function SchedulePage() {
+  const { userId, isLoaded } = useAuth();
   const [activeTab, setActiveTab] = useState<'horario' | 'calendario'>('horario');
   const [activeFilter, setActiveFilter] = useState<'all' | SubjectId>('all');
   const [absenceStatsMap, setAbsenceStatsMap] = useState<
@@ -30,6 +32,7 @@ export default function SchedulePage() {
   const [allEvents, setAllEvents] = useState<AcademicEvent[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<AcademicEvent[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isMyAbsencesOpen, setIsMyAbsencesOpen] = useState<boolean>(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -65,7 +68,7 @@ export default function SchedulePage() {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData, userId]);
 
   const handleSelectCategory = useCallback((categoryId: 'all' | SubjectId) => {
     setActiveFilter(categoryId);
@@ -74,7 +77,10 @@ export default function SchedulePage() {
   return (
     <div className="w-full flex flex-col items-center">
       {/* Encabezado con acceso de usuario y panel */}
-      <Header />
+      <Header
+        isAdmin={isAdmin}
+        onOpenMyAbsences={() => setIsMyAbsencesOpen(true)}
+      />
 
       {/* Selector de Pestañas: Horario vs Calendario */}
       <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900/80 border border-white/10 mb-6 backdrop-blur-xl">
@@ -122,6 +128,8 @@ export default function SchedulePage() {
             onSelectCategory={handleSelectCategory}
             absenceStats={absenceStatsMap}
             onRefresh={loadData}
+            isMyAbsencesOpenExternal={isMyAbsencesOpen}
+            onCloseMyAbsencesExternal={() => setIsMyAbsencesOpen(false)}
           />
 
           {/* Barra de Filtros */}
